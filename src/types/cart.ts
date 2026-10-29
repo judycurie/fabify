@@ -8,6 +8,9 @@ export interface CartItem {
   id: string;
   productType: ProductType;
   title: string;
+  templateName?: string;
+  paramCode?: string;
+  image?: string;
   isFree: boolean;
   unitPrice: number;
   totalPrice: number;
@@ -38,4 +41,12 @@ export interface OrderRecord {
   paymentMethod: PaymentMethod;
   last4Card?: string;
   downloadAccessKey: string;
+}
+
+export interface ActiveTemplateInfo {
+  id: string;
+  name: string;
+  isFree: boolean;
+  price: number;
+  productType: 'tag' | 'box' | 'game';
 }

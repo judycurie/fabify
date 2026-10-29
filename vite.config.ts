@@ -13,6 +13,9 @@ export default defineConfig(() => {
     },
     build: {
       target: 'es2022',
+      sourcemap: false,
+      minify: 'esbuild',
+      emptyOutDir: true,
       chunkSizeWarningLimit: 1200,
       rollupOptions: {
         output: {
@@ -36,6 +39,7 @@ export default defineConfig(() => {
     server: {
       port: 3000,
       host: '0.0.0.0',
+      allowedHosts: true,
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},

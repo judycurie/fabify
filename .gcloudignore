@@ -1,0 +1,11 @@
+.gcloudignore
+.git
+.gitignore
+.dockerignore
+node_modules/
+dist/
+build/
+.cache/
+*.log
+.DS_Store
+bun.lock

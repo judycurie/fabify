@@ -98,6 +98,22 @@ export function saveOrdersToStorage(orders: OrderRecord[]): void {
   }
 }
 
+export function isTemplatePurchased(templateId?: string, templateName?: string): boolean {
+  if (!templateId && !templateName) return false;
+  const orders = getSavedOrders();
+  for (const order of orders) {
+    for (const item of order.items) {
+      if (templateName && item.title && item.title.toLowerCase().trim() === templateName.toLowerCase().trim()) {
+        return true;
+      }
+      if (templateId && (item.id === templateId || (item as any).templateId === templateId)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 export function createNewDigitalOrder(params: {
   items: CartItem[];
   customer: CustomerDetails;

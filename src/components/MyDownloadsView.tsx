@@ -158,14 +158,25 @@ License Grant: ${item.licenseType === 'commercial' ? 'COMMERCIAL 3D PRINTING LIC
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-xl ${
-                        isLight ? 'bg-zinc-100 text-zinc-800' : 'bg-zinc-800 text-zinc-200'
-                      }`}>
-                        {item.productType === 'box' ? <BoxIcon className="w-4 h-4" /> : <TagIcon className="w-4 h-4" />}
-                      </div>
+                    <div className="flex items-center gap-2.5">
+                      {item.image ? (
+                        <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className={`p-2 rounded-xl ${
+                          isLight ? 'bg-zinc-100 text-zinc-800' : 'bg-zinc-800 text-zinc-200'
+                        }`}>
+                          {item.productType === 'box' ? <BoxIcon className="w-4 h-4" /> : <TagIcon className="w-4 h-4" />}
+                        </div>
+                      )}
                       <div>
-                        <h3 className="font-bold text-sm tracking-tight">{item.title}</h3>
+                        <h3 className="font-bold text-sm tracking-tight">{item.templateName || item.title}</h3>
                         <span className="text-[11px] text-zinc-500 font-mono">Order {order.orderId}</span>
                       </div>
                     </div>
@@ -174,7 +185,15 @@ License Grant: ${item.licenseType === 'commercial' ? 'COMMERCIAL 3D PRINTING LIC
                     </span>
                   </div>
 
-                  <div className={`p-3 rounded-2xl border text-xs font-mono my-3 ${
+                  {item.paramCode && (
+                    <div className="mb-2">
+                      <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60 font-semibold tracking-tight inline-block truncate max-w-full">
+                        CODE: {item.paramCode}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className={`p-3 rounded-2xl border text-xs font-mono my-2 ${
                     isLight ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-950 border-zinc-800'
                   }`}>
                     <div className="text-zinc-500 text-[10px] uppercase">Custom Identifier</div>

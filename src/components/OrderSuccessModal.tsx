@@ -149,15 +149,34 @@ Software: Fabify 3D Engine
                   isLight ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-900/40 border-zinc-800'
                 }`}
               >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm">{item.title}</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-semibold uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      {item.licenseType}
-                    </span>
-                  </div>
-                  <div className="text-xs text-zinc-500 mt-0.5 font-mono">
-                    Text: {item.customText || 'N/A'} · Format: Binary STL
+                <div className="flex items-center gap-3">
+                  {item.image && (
+                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-sm">{item.templateName || item.title}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-semibold uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        {item.licenseType}
+                      </span>
+                    </div>
+                    {item.paramCode && (
+                      <div className="mt-0.5">
+                        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60 font-semibold tracking-tight inline-block">
+                          CODE: {item.paramCode}
+                        </span>
+                      </div>
+                    )}
+                    <div className="text-xs text-zinc-500 mt-0.5 font-mono">
+                      Text: {item.customText || 'N/A'} · Format: Binary STL
+                    </div>
                   </div>
                 </div>
 

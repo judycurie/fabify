@@ -142,13 +142,44 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-2.5">
-                      <div className={`p-2 rounded-xl mt-0.5 ${isLight ? 'bg-zinc-200/60' : 'bg-zinc-800'}`}>
-                        {item.productType === 'box' ? <BoxIcon className="w-4 h-4" /> : <TagIcon className="w-4 h-4" />}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-sm tracking-tight">{item.title}</h4>
-                        <div className="font-mono text-xs text-zinc-500 mt-0.5 truncate max-w-[200px]">
-                          Text: {item.customText || 'N/A'}
+                      {item.image ? (
+                        <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className={`p-2 rounded-xl mt-0.5 ${isLight ? 'bg-zinc-200/60' : 'bg-zinc-800'}`}>
+                          {item.productType === 'box' ? <BoxIcon className="w-4 h-4" /> : <TagIcon className="w-4 h-4" />}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="font-bold text-sm tracking-tight truncate">
+                            {item.templateName || item.title}
+                          </h4>
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                            STL
+                          </span>
+                        </div>
+
+                        {item.paramCode && (
+                          <div className="mt-1 flex items-center gap-1">
+                            <span className="text-[10px] text-zinc-400 font-mono shrink-0">CODE:</span>
+                            <span 
+                              className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60 font-semibold tracking-tight truncate max-w-[220px]" 
+                              title={item.paramCode}
+                            >
+                              {item.paramCode}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="font-mono text-[11px] text-zinc-500 mt-0.5 truncate max-w-[230px]">
+                          Text: <span className="font-medium text-zinc-700 dark:text-zinc-300">"{item.customText || 'N/A'}"</span>
                         </div>
                       </div>
                     </div>

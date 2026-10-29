@@ -28,7 +28,8 @@ import {
   Sparkles,
   ChevronRight,
   ShoppingBag,
-  Truck
+  Truck,
+  Lock
 } from 'lucide-react';
 
 export type ActiveSheetTab = 'text' | 'base' | 'holes' | 'style' | 'export' | null;
@@ -44,6 +45,11 @@ interface ControlDockProps {
   onExportMultiPart: () => void;
   onOpenSpecs?: () => void;
   onOpenOrderModal?: () => void;
+  isFree?: boolean;
+  price?: number;
+  isPurchased?: boolean;
+  templateName?: string;
+  onPurchase?: () => void;
 }
 
 const MONOCHROME_COLORS = [
@@ -67,9 +73,15 @@ export const ControlDock: React.FC<ControlDockProps> = ({
   onExportSTL,
   onExportMultiPart,
   onOpenSpecs,
-  onOpenOrderModal
+  onOpenOrderModal,
+  isFree = true,
+  price = 0,
+  isPurchased = false,
+  templateName = '',
+  onPurchase
 }) => {
   const isLight = theme === 'light';
+  const isUnlocked = isFree || isPurchased;
 
   // Dynamic maximum ranges based on font size
   const fs = config.fontSize;
@@ -456,6 +468,44 @@ export const ControlDock: React.FC<ControlDockProps> = ({
             {/* 2. BASE & FILLET EDGES TAB */}
             {activeTab === 'base' && (
               <div className="space-y-4">
+                {/* Shape Profile Selection (Round Circle for Pet Tags / Rounded Rect / Rectangle) */}
+                <div className={`p-3.5 rounded-2xl border ${isLight ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-950 border-zinc-800'}`}>
+                  <div className="flex justify-between items-center text-xs mb-2">
+                    <span className="font-bold">Shape Profile</span>
+                    <span className="font-mono text-[11px] font-semibold text-zinc-500 uppercase">
+                      {config.shape === 'circle' ? 'Round (Circle)' : config.shape === 'rectangle' ? 'Rectangle' : 'Rounded Rect'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { id: 'rounded', label: 'Rounded Rect', desc: 'Pill / Filleted' },
+                      { id: 'circle', label: 'Round (Circle)', desc: 'Pet Tag / Disc' },
+                      { id: 'rectangle', label: 'Rectangle', desc: 'Square 90°' },
+                    ].map((s) => {
+                      const isSelected = (config.shape || 'rounded') === s.id;
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => onChange({ shape: s.id as any })}
+                          className={`py-2 px-1.5 rounded-xl border text-center transition-all cursor-pointer ${
+                            isSelected
+                              ? isLight
+                                ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm'
+                                : 'bg-white text-zinc-950 border-white shadow-sm'
+                              : isLight
+                              ? 'bg-white hover:bg-zinc-100 text-zinc-700 border-zinc-300'
+                              : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700'
+                          }`}
+                        >
+                          <div className="text-xs font-bold leading-tight">{s.label}</div>
+                          <div className="text-[10px] opacity-70 mt-0.5">{s.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Base Thickness */}
                 <div className={`p-3.5 rounded-2xl border ${isLight ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-950 border-zinc-800'}`}>
                   <div className="flex justify-between items-center text-xs mb-2">
@@ -510,59 +560,71 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                   </div>
                 </div>
 
-                {/* Corner Fillet Radius */}
-                <div className={`p-3.5 rounded-2xl border ${isLight ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-950 border-zinc-800'}`}>
-                  <div className="flex justify-between items-center text-xs mb-2">
-                    <span className="font-bold">Fillet Corner Radius</span>
-                    <span className="font-mono font-bold text-sm">{config.filletRadius.toFixed(1)} mm</span>
-                  </div>
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <button
-                      onClick={() => stepValue('filletRadius', config.filletRadius, -0.5, 0.5, maxFillet, 1)}
-                      className={`w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-base shrink-0 active:scale-95 ${
-                        isLight ? 'bg-white border-zinc-300' : 'bg-zinc-900 border-zinc-700'
-                      }`}
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max={maxFillet}
-                      step={maxFillet > 20 ? 1.0 : 0.5}
-                      value={Math.min(config.filletRadius, maxFillet)}
-                      onChange={(e) => onChange({ filletRadius: parseFloat(e.target.value) })}
-                      className={`w-full cursor-pointer ${isLight ? 'accent-zinc-900' : 'accent-white'}`}
-                    />
-                    <button
-                      onClick={() => stepValue('filletRadius', config.filletRadius, 0.5, 0.5, maxFillet, 1)}
-                      className={`w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-base shrink-0 active:scale-95 ${
-                        isLight ? 'bg-white border-zinc-300' : 'bg-zinc-900 border-zinc-700'
-                      }`}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {[
-                      { rad: 1.0, label: 'Subtle 1mm' },
-                      { rad: 3.5, label: 'Smooth 3.5mm' },
-                      { rad: maxFillet, label: 'Full Pill Shape' },
-                    ].map((p) => (
+                {/* Corner Fillet Radius - Adjusted when circular */}
+                {config.shape !== 'circle' ? (
+                  <div className={`p-3.5 rounded-2xl border ${isLight ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-950 border-zinc-800'}`}>
+                    <div className="flex justify-between items-center text-xs mb-2">
+                      <span className="font-bold">Fillet Corner Radius</span>
+                      <span className="font-mono font-bold text-sm">{config.filletRadius.toFixed(1)} mm</span>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2.5">
                       <button
-                        key={p.label}
-                        onClick={() => onChange({ filletRadius: p.rad })}
-                        className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
-                          Math.abs(config.filletRadius - p.rad) < 0.2
-                            ? isLight ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-950 border-white'
-                            : isLight ? 'bg-white text-zinc-700 border-zinc-300' : 'bg-zinc-900 text-zinc-300 border-zinc-700'
+                        onClick={() => stepValue('filletRadius', config.filletRadius, -0.5, 0.5, maxFillet, 1)}
+                        className={`w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-base shrink-0 active:scale-95 ${
+                          isLight ? 'bg-white border-zinc-300' : 'bg-zinc-900 border-zinc-700'
                         }`}
                       >
-                        {p.label}
+                        <Minus className="w-4 h-4" />
                       </button>
-                    ))}
+                      <input
+                        type="range"
+                        min="0.5"
+                        max={maxFillet}
+                        step={maxFillet > 20 ? 1.0 : 0.5}
+                        value={Math.min(config.filletRadius, maxFillet)}
+                        onChange={(e) => onChange({ filletRadius: parseFloat(e.target.value) })}
+                        className={`w-full cursor-pointer ${isLight ? 'accent-zinc-900' : 'accent-white'}`}
+                      />
+                      <button
+                        onClick={() => stepValue('filletRadius', config.filletRadius, 0.5, 0.5, maxFillet, 1)}
+                        className={`w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-base shrink-0 active:scale-95 ${
+                          isLight ? 'bg-white border-zinc-300' : 'bg-zinc-900 border-zinc-700'
+                        }`}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {[
+                        { rad: 1.0, label: 'Subtle 1mm' },
+                        { rad: 3.5, label: 'Smooth 3.5mm' },
+                        { rad: maxFillet, label: 'Full Pill Shape' },
+                      ].map((p) => (
+                        <button
+                          key={p.label}
+                          onClick={() => onChange({ filletRadius: p.rad })}
+                          className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
+                            Math.abs(config.filletRadius - p.rad) < 0.2
+                              ? isLight ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-950 border-white'
+                              : isLight ? 'bg-white text-zinc-700 border-zinc-300' : 'bg-zinc-900 text-zinc-300 border-zinc-700'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className={`p-3 rounded-2xl border flex items-center justify-between text-xs ${
+                    isLight ? 'bg-zinc-50 border-zinc-200 text-zinc-600' : 'bg-zinc-950 border-zinc-800 text-zinc-400'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">360° Circular Perimeter</span>
+                    </div>
+                    <span className="text-[11px] font-mono text-zinc-500">Continuous Arc</span>
+                  </div>
+                )}
 
                 {/* Padding / Margin & Bevel */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -976,80 +1038,135 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                   </button>
                 )}
 
-                <div className="flex items-center gap-2 text-xs text-zinc-400 py-1">
-                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1" />
-                  <span>Free Instant CAD Export</span>
-                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1" />
-                </div>
+                {!isUnlocked ? (
+                  /* GATED PREMIUM CAD LICENSE CARD */
+                  <div className={`p-4 sm:p-5 rounded-2xl border space-y-4 ${
+                    isLight ? 'bg-amber-50/80 border-amber-300' : 'bg-amber-950/20 border-amber-800/60'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      <div className="p-3 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                            Commercial CAD License Required
+                          </h4>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase bg-amber-200/80 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
+                            ${(price || 2.99).toFixed(2)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 leading-relaxed">
+                          <strong>{templateName || 'This template'}</strong> is a premium commercial design. Free STL downloads are disabled. Purchase a CAD license to export watertight slicer-ready STLs.
+                        </p>
+                      </div>
+                    </div>
 
-                {/* Primary STL Download Card */}
-                <button
-                  onClick={() => onExportSTL(true)}
-                  className={`w-full p-4 rounded-2xl text-left border transition-all active:scale-[0.98] flex items-center justify-between ${
-                    isLight
-                      ? 'bg-zinc-50 border-zinc-200 text-zinc-900 hover:bg-zinc-100'
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-100 hover:bg-zinc-850'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-xl ${isLight ? 'bg-white/10 text-white' : 'bg-zinc-950/10 text-zinc-950'}`}>
-                      <Download className="w-5 h-5" />
+                    <div className="text-xs space-y-1.5 pl-2 border-l-2 border-amber-500/40 text-zinc-600 dark:text-zinc-400">
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span>Commercial physical print rights (sell unlimited prints)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span>Watertight binary STL + dual-color multi-part exports</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span>Permanent access & re-downloads in your library</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-bold text-sm block">Download Binary STL (Recommended)</span>
-                      <span className={`text-[11px] block mt-0.5 ${isLight ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                        Standard compact watertight file for Bambu, Cura, Prusa, OrcaSlicer
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 opacity-70 shrink-0" />
-                </button>
 
-                {/* Dual-Color / Multi-Part STLs Card */}
-                <button
-                  onClick={onExportMultiPart}
-                  className={`w-full p-4 rounded-2xl text-left border transition-all active:scale-[0.98] flex items-center justify-between ${
-                    isLight
-                      ? 'bg-zinc-50 border-zinc-300 text-zinc-900 hover:bg-zinc-100'
-                      : 'bg-zinc-950 border-zinc-800 text-zinc-100 hover:bg-zinc-850'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-xl border ${isLight ? 'bg-white border-zinc-200' : 'bg-zinc-900 border-zinc-700'}`}>
-                      <Layers className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <span className="font-bold text-sm block">Dual-Color Multi-Part STLs</span>
-                      <span className={`text-[11px] block mt-0.5 ${isLight ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                        Exports separate Base.stl + Text.stl for Bambu AMS or Prusa MMU
-                      </span>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={onPurchase}
+                      className="w-full py-3 px-4 rounded-xl font-bold text-xs shadow-md bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>Add to Basket & Download (${(price || 3.50).toFixed(2)})</span>
+                    </button>
                   </div>
-                  <ChevronRight className="w-4 h-4 opacity-50 shrink-0" />
-                </button>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-xs text-zinc-400 py-1">
+                      <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1" />
+                      <span>{isPurchased ? 'Licensed STL Download' : 'Free Community STL Download'}</span>
+                      <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1" />
+                    </div>
 
-                {/* ASCII STL Card */}
-                <button
-                  onClick={() => onExportSTL(false)}
-                  className={`w-full p-3.5 rounded-2xl text-left border transition-all active:scale-[0.98] flex items-center justify-between ${
-                    isLight
-                      ? 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50'
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-zinc-100 border-zinc-200' : 'bg-zinc-950 border-zinc-800'}`}>
-                      <FileCode className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="font-semibold text-xs block">ASCII STL Format (Text)</span>
-                      <span className={`text-[10px] block ${isLight ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                        Plain human-readable format for CAD inspection
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 opacity-40 shrink-0" />
-                </button>
+                    {/* Primary STL Download Card */}
+                    <button
+                      onClick={() => onExportSTL(true)}
+                      className="w-full p-4 rounded-2xl text-left border transition-all active:scale-[0.98] flex items-center justify-between shadow-sm bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500/40 shadow-emerald-600/20"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-xl bg-white/15 text-white">
+                          <Download className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm block">
+                              {isPurchased ? 'Download Licensed STL' : 'Download Free STL (Recommended)'}
+                            </span>
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/20 text-white font-bold uppercase">
+                              {isPurchased ? 'Licensed' : 'FREE'}
+                            </span>
+                          </div>
+                          <span className="text-[11px] block mt-0.5 text-emerald-100">
+                            Standard compact watertight file for Bambu, Cura, Prusa, OrcaSlicer
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-75 shrink-0" />
+                    </button>
+
+                    {/* Dual-Color / Multi-Part STLs Card */}
+                    <button
+                      onClick={onExportMultiPart}
+                      className={`w-full p-4 rounded-2xl text-left border transition-all active:scale-[0.98] flex items-center justify-between ${
+                        isLight
+                          ? 'bg-zinc-50 border-zinc-300 text-zinc-900 hover:bg-zinc-100'
+                          : 'bg-zinc-950 border-zinc-800 text-zinc-100 hover:bg-zinc-850'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl border ${isLight ? 'bg-white border-zinc-200' : 'bg-zinc-900 border-zinc-700'}`}>
+                          <Layers className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-sm block">Dual-Color Multi-Part STLs</span>
+                          <span className={`text-[11px] block mt-0.5 ${isLight ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                            Exports separate Base.stl + Text.stl for Bambu AMS or Prusa MMU
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-50 shrink-0" />
+                    </button>
+
+                    {/* ASCII STL Card */}
+                    <button
+                      onClick={() => onExportSTL(false)}
+                      className={`w-full p-3.5 rounded-2xl text-left border transition-all active:scale-[0.98] flex items-center justify-between ${
+                        isLight
+                          ? 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-zinc-100 border-zinc-200' : 'bg-zinc-950 border-zinc-800'}`}>
+                          <FileCode className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="font-semibold text-xs block">ASCII STL Format (Text)</span>
+                          <span className={`text-[10px] block ${isLight ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                            Plain human-readable format for CAD inspection
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-40 shrink-0" />
+                    </button>
+                  </>
+                )}
 
                 {/* Slicing & Dimension Summary */}
                 {dimensions && (
@@ -1110,23 +1227,26 @@ export const ControlDock: React.FC<ControlDockProps> = ({
             const isActive = activeTab === tab.id;
             
             if (tab.isCTA) {
+              const CTAIcon = !isUnlocked ? ShoppingBag : Icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => onSelectTab(isActive ? null : tab.id)}
-                  aria-label="Export STL"
+                  aria-label={!isUnlocked ? "Add to Basket" : "Export STL"}
                   className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all active:scale-95 min-h-[48px] min-w-[56px] ${
                     isActive
-                      ? isLight
-                        ? 'bg-zinc-900 text-white shadow-md'
-                        : 'bg-white text-zinc-950 shadow-md'
-                      : isLight
-                      ? 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900'
-                      : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-100'
+                      ? !isUnlocked
+                        ? 'bg-amber-600 text-white shadow-md'
+                        : 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                      : !isUnlocked
+                      ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-amber-950 dark:hover:bg-amber-900 dark:text-amber-200'
+                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-800/80'
                   }`}
                 >
-                  <Icon className="w-4 h-4 mb-0.5" />
-                  <span className="text-[10px] font-bold tracking-tight">Export</span>
+                  <CTAIcon className="w-4 h-4 mb-0.5" />
+                  <span className="text-[10px] font-bold tracking-tight">
+                    {!isUnlocked ? 'Basket' : 'Free STL'}
+                  </span>
                 </button>
               );
             }

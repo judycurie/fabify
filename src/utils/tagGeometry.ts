@@ -56,6 +56,75 @@ export function buildTagBase2DShape(
   const holeMargin = Math.max(1.5, config.holeEdgeMargin);
   const holeSpacing = Math.max(6.0, config.holeSymmetricalSpacing);
 
+  // ---------------------------------------------------------
+  // 1. CIRCULAR / ROUND TAG GEOMETRY (e.g. Pet ID tags, medals, coins)
+  // ---------------------------------------------------------
+  if (config.shape === 'circle') {
+    // Bounding radius containing the text rectangle centered at (0, 0)
+    const textDiagRadius = Math.sqrt((textW / 2) * (textW / 2) + (textH / 2) * (textH / 2));
+    let baseRadius = textDiagRadius + pad;
+
+    const holes: HoleInfo[] = [];
+
+    if (config.holePlacement === 'top') {
+      // Top hole placed near the upper rim of the circular disc
+      // Need baseRadius - 2*(holeMargin + holeR) >= textH / 2 so hole does not encroach text
+      const requiredHoleClearanceRadius = textH / 2 + 2 * (holeMargin + holeR) + 0.5;
+      baseRadius = Math.max(baseRadius, requiredHoleClearanceRadius);
+
+      const holeCenterY = baseRadius - holeMargin - holeR;
+      if (config.holeCount === 1) {
+        holes.push({ x: 0, y: holeCenterY, diameter: config.holeDiameter });
+      } else {
+        const halfSpace = Math.min(holeSpacing / 2, baseRadius * 0.5);
+        holes.push({ x: -halfSpace, y: holeCenterY, diameter: config.holeDiameter });
+        holes.push({ x: halfSpace, y: holeCenterY, diameter: config.holeDiameter });
+      }
+    } else if (config.holePlacement === 'left') {
+      const requiredHoleClearanceRadius = textW / 2 + 2 * (holeMargin + holeR) + 0.5;
+      baseRadius = Math.max(baseRadius, requiredHoleClearanceRadius);
+      const holeCenterX = -baseRadius + holeMargin + holeR;
+      holes.push({ x: holeCenterX, y: 0, diameter: config.holeDiameter });
+    } else if (config.holePlacement === 'right') {
+      const requiredHoleClearanceRadius = textW / 2 + 2 * (holeMargin + holeR) + 0.5;
+      baseRadius = Math.max(baseRadius, requiredHoleClearanceRadius);
+      const holeCenterX = baseRadius - holeMargin - holeR;
+      holes.push({ x: holeCenterX, y: 0, diameter: config.holeDiameter });
+    } else if (config.holePlacement === 'both-ends') {
+      const requiredHoleClearanceRadius = textW / 2 + 2 * (holeMargin + holeR) + 0.5;
+      baseRadius = Math.max(baseRadius, requiredHoleClearanceRadius);
+      const holeDist = baseRadius - holeMargin - holeR;
+      holes.push({ x: -holeDist, y: 0, diameter: config.holeDiameter });
+      holes.push({ x: holeDist, y: 0, diameter: config.holeDiameter });
+    }
+
+    const minX = -baseRadius;
+    const maxX = baseRadius;
+    const minY = -baseRadius;
+    const maxY = baseRadius;
+    const width = baseRadius * 2;
+    const height = baseRadius * 2;
+
+    const shape = new THREE.Shape();
+    shape.absarc(0, 0, baseRadius, 0, Math.PI * 2, false);
+    shape.closePath();
+
+    for (const h of holes) {
+      const holePath = new THREE.Path();
+      holePath.absarc(h.x, h.y, h.diameter / 2, 0, Math.PI * 2, true);
+      shape.holes.push(holePath);
+    }
+
+    return {
+      shape,
+      holes,
+      bounds: { minX, maxX, minY, maxY, width, height },
+    };
+  }
+
+  // ---------------------------------------------------------
+  // 2. RECTANGULAR & ROUNDED RECTANGLE TAG GEOMETRY
+  // ---------------------------------------------------------
   // Minimal text envelope centered around (0, 0)
   let minX = -textW / 2 - pad;
   let maxX = textW / 2 + pad;
@@ -138,7 +207,9 @@ export function buildTagBase2DShape(
 
   // Fillet radius, clamped to max possible radius
   const maxR = Math.max(0.5, Math.min(width, height) / 2 - 0.05);
-  const r = Math.min(Math.max(0.2, config.filletRadius), maxR);
+  const r = config.shape === 'rectangle' 
+    ? 0.2 
+    : Math.min(Math.max(0.2, config.filletRadius), maxR);
 
   // Construct 2D shape with 4 rounded fillet corners
   const shape = new THREE.Shape();

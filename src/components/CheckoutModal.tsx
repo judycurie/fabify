@@ -3,6 +3,7 @@ import { CartItem, CustomerDetails, PaymentMethod, OrderRecord } from '../types/
 import { AppTheme } from '../types/tag';
 import { VALID_PROMO_CODES } from '../utils/pricing';
 import { createNewDigitalOrder } from '../utils/orders';
+import { getCurrentUser } from '../utils/auth';
 import { 
   X, 
   CreditCard, 
@@ -34,9 +35,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   appliedPromo,
   onOrderCompleted,
 }) => {
+  const currentUser = getCurrentUser();
   const [customer, setCustomer] = useState<CustomerDetails>({
-    fullName: 'Alex Vance',
-    email: 'alex@precisioncad.design',
+    fullName: currentUser?.name || 'Judy Curie',
+    email: currentUser?.email || 'judymariecurie@gmail.com',
   });
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
@@ -328,11 +330,21 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               Digital Files ({items.length})
             </span>
             {items.map((i) => (
-              <div key={i.id} className="flex justify-between items-center text-zinc-500">
-                <span className="truncate max-w-[70%]">
-                  {i.title} ({i.licenseType} license)
-                </span>
-                <span className="font-mono font-bold">
+              <div key={i.id} className="flex justify-between items-start text-zinc-500 py-1">
+                <div className="max-w-[70%]">
+                  <div className="font-semibold text-zinc-800 dark:text-zinc-200 truncate">
+                    {i.templateName || i.title}
+                  </div>
+                  {i.paramCode && (
+                    <div className="font-mono text-[9px] text-amber-700 dark:text-amber-400 truncate">
+                      {i.paramCode}
+                    </div>
+                  )}
+                  <span className="text-[10px] text-zinc-400 capitalize">
+                    {i.licenseType} license
+                  </span>
+                </div>
+                <span className="font-mono font-bold shrink-0">
                   {i.totalPrice === 0 ? 'FREE' : `$${i.totalPrice.toFixed(2)}`}
                 </span>
               </div>

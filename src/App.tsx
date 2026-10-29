@@ -5,7 +5,8 @@
  *   1. Parametric Tag & Keychain Forge
  *   2. Parametric Desk Organizer & Box Forge
  * - Digital-Only Delivery: Instant watertight binary STL exports & license certificates
- * - Free Community Templates & Paid Commercial CAD Licenses
+ * - Strict Separation of Free Community Models & Paid Commercial CAD Licenses
+ * - Free download gating: Paid templates require commercial CAD license purchase before export
  * - Digital Cart & Encrypted Checkout (Free 1-click download vs Paid Card/Apple/Google Pay)
  * - "My Downloads" Library with persistent re-downloads & 3D re-customization
  */
@@ -14,15 +15,18 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import * as opentype from 'opentype.js';
 import { TagConfig, TagDimensions, AppTheme, TagPreset } from './types/tag';
 import { BoxConfig, BoxDimensions, BoxPreset } from './types/box';
-import { CartItem, OrderRecord, LicenseType } from './types/cart';
+import { CartItem, OrderRecord, LicenseType, ActiveTemplateInfo } from './types/cart';
 import { DEFAULT_TAG_CONFIG, TAG_PRESETS } from './utils/presets';
 import { DEFAULT_BOX_CONFIG, BOX_PRESETS } from './utils/boxPresets';
+import { generateTagParamCode, generateBoxParamCode } from './utils/paramCode';
 import { loadHelveticaFont } from './utils/fontLoader';
 import { generateTagModel, GeneratedTagModel } from './utils/tagGeometry';
 import { generateBoxModel } from './utils/boxGeometry';
 import { exportSTL, exportMultiPartSTL, getSafeFilename, fireExportConfetti } from './utils/stlExporter';
-import { getSavedCart, saveCartToStorage } from './utils/orders';
-import { VALID_PROMO_CODES, calculateDigitalItemPrice, COMMERCIAL_LICENSE_SURCHARGE } from './utils/pricing';
+import { getSavedCart, saveCartToStorage, isTemplatePurchased } from './utils/orders';
+import { VALID_PROMO_CODES, calculateDigitalItemPrice } from './utils/pricing';
+import { UserProfile } from './types/auth';
+import { getCurrentUser, logoutUser } from './utils/auth';
 
 import { TopHeader, NavPage, StudioConfigurator } from './components/TopHeader';
 import { Viewport3D } from './components/Viewport3D';
@@ -34,11 +38,26 @@ import { CheckoutModal } from './components/CheckoutModal';
 import { OrderSuccessModal } from './components/OrderSuccessModal';
 import { CatalogView } from './components/CatalogView';
 import { MyDownloadsView } from './components/MyDownloadsView';
+import { AuthModal } from './components/AuthModal';
 
 export default function App() {
   const [theme, setTheme] = useState<AppTheme>('light');
   const [currentPage, setCurrentPage] = useState<NavPage>('studio');
   const [activeConfigurator, setActiveConfigurator] = useState<StudioConfigurator>('tag');
+
+  // User Authentication & Session State for Free Downloads
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(getCurrentUser);
+  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+  const pendingDownloadActionRef = useRef<(() => void) | null>(null);
+
+  // Active Template / Provenance Tracking (Free vs Paid Commercial License)
+  const [activeTemplate, setActiveTemplate] = useState<ActiveTemplateInfo>({
+    id: 'keychain',
+    name: 'Keychain Tag',
+    isFree: true,
+    price: 0,
+    productType: 'tag',
+  });
 
   // Tag Configurator State
   const [tagConfig, setTagConfig] = useState<TagConfig>(DEFAULT_TAG_CONFIG);
@@ -68,6 +87,9 @@ export default function App() {
   const debounceBoxRef = useRef<number | null>(null);
   const currentTagModelRef = useRef<GeneratedTagModel | null>(null);
   const currentBoxModelRef = useRef<GeneratedTagModel | null>(null);
+
+  // Check if current active template has been purchased
+  const isCurrentTemplatePurchased = isTemplatePurchased(activeTemplate.id, activeTemplate.name);
 
   // Persist digital cart
   useEffect(() => {
@@ -164,7 +186,84 @@ export default function App() {
     setTagConfig((prev) => ({ ...prev, ...partial }));
   };
 
+  // Box Configuration Handlers
+  const handleUpdateBoxConfig = (partial: Partial<BoxConfig>) => {
+    setBoxConfig((prev) => ({ ...prev, ...partial }));
+  };
+
+  // Trigger Purchase / Checkout flow for the current customized model
+  const handlePurchaseCurrentTemplate = () => {
+    const isBox = activeConfigurator === 'box';
+    const basePrice = activeTemplate.price > 0 ? activeTemplate.price : (isBox ? 3.50 : 2.99);
+
+    const customText = isBox
+      ? (boxConfig.labelText || 'ORGANIZER')
+      : (tagConfig.text ? `${tagConfig.text}${tagConfig.hasSecondLine && tagConfig.textLine2 ? ` · ${tagConfig.textLine2}` : ''}` : 'TAG');
+
+    const paramCode = isBox ? generateBoxParamCode(boxConfig) : generateTagParamCode(tagConfig);
+    const templateName = activeTemplate.name || (isBox ? 'Custom Desk Organizer' : 'Custom Plate / Tag');
+
+    const newItem: CartItem = {
+      id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      productType: isBox ? 'box' : 'tag',
+      title: templateName,
+      templateName,
+      paramCode,
+      isFree: false,
+      unitPrice: basePrice,
+      totalPrice: basePrice,
+      licenseType: 'personal',
+      customText,
+      boxConfig: isBox ? { ...boxConfig } : undefined,
+      tagConfig: !isBox ? { ...tagConfig } : undefined,
+      createdAt: Date.now(),
+    };
+
+    setCartItems((prev) => {
+      const exists = prev.some((it) => it.title === newItem.title && it.customText === newItem.customText && it.paramCode === newItem.paramCode);
+      if (exists) return prev;
+      return [newItem, ...prev];
+    });
+    setIsCartOpen(true);
+  };
+
+  // User Login & Session Handlers
+  const handleLoginSuccess = (user: UserProfile) => {
+    setCurrentUser(user);
+    if (pendingDownloadActionRef.current) {
+      const action = pendingDownloadActionRef.current;
+      pendingDownloadActionRef.current = null;
+      setTimeout(() => {
+        action();
+      }, 100);
+    }
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    setCurrentUser(null);
+  };
+
+  const requireAuthForFreeDownload = (callback: () => void): boolean => {
+    if (!currentUser) {
+      pendingDownloadActionRef.current = callback;
+      setIsAuthOpen(true);
+      return false;
+    }
+    return true;
+  };
+
+  // Export Tag STL - Gated against unpaid templates and requires login for free download
   const handleExportTagSTL = (binary: boolean) => {
+    if (!activeTemplate.isFree && !isCurrentTemplatePurchased) {
+      handlePurchaseCurrentTemplate();
+      return;
+    }
+
+    if (!requireAuthForFreeDownload(() => handleExportTagSTL(binary))) {
+      return;
+    }
+
     const active = currentTagModelRef.current;
     if (!active) return;
 
@@ -176,6 +275,15 @@ export default function App() {
   };
 
   const handleExportTagMultiPart = () => {
+    if (!activeTemplate.isFree && !isCurrentTemplatePurchased) {
+      handlePurchaseCurrentTemplate();
+      return;
+    }
+
+    if (!requireAuthForFreeDownload(() => handleExportTagMultiPart())) {
+      return;
+    }
+
     const active = currentTagModelRef.current;
     if (!active) return;
 
@@ -185,12 +293,17 @@ export default function App() {
     fireExportConfetti();
   };
 
-  // Box Configuration Handlers
-  const handleUpdateBoxConfig = (partial: Partial<BoxConfig>) => {
-    setBoxConfig((prev) => ({ ...prev, ...partial }));
-  };
-
+  // Export Box STL - Gated against unpaid templates and requires login for free download
   const handleExportBoxSTL = (binary: boolean) => {
+    if (!activeTemplate.isFree && !isCurrentTemplatePurchased) {
+      handlePurchaseCurrentTemplate();
+      return;
+    }
+
+    if (!requireAuthForFreeDownload(() => handleExportBoxSTL(binary))) {
+      return;
+    }
+
     const active = currentBoxModelRef.current;
     if (!active) return;
 
@@ -240,20 +353,37 @@ export default function App() {
     setIsOrderSuccessOpen(true);
   };
 
-  // Catalog Actions
+  // Preset Selection Handlers (Catalog & Templates Menu)
   const handleSelectTagPreset = (preset: TagPreset) => {
     handleUpdateTagConfig(preset.config);
+    setActiveTemplate({
+      id: preset.id,
+      name: preset.name,
+      isFree: preset.isFree ?? true,
+      price: preset.digitalPrice ?? 0,
+      productType: 'tag',
+    });
     setActiveConfigurator('tag');
     setCurrentPage('studio');
   };
 
   const handleSelectBoxPreset = (preset: BoxPreset) => {
     handleUpdateBoxConfig(preset.config);
+    setActiveTemplate({
+      id: preset.id,
+      name: preset.name,
+      isFree: preset.isFree,
+      price: preset.digitalPrice,
+      productType: 'box',
+    });
     setActiveConfigurator('box');
     setCurrentPage('studio');
   };
 
   const handleInstantDownloadFreeTag = async (preset: TagPreset) => {
+    if (!requireAuthForFreeDownload(() => handleInstantDownloadFreeTag(preset))) {
+      return;
+    }
     handleUpdateTagConfig(preset.config);
     try {
       const activeFont = font || await loadHelveticaFont('bold');
@@ -269,6 +399,9 @@ export default function App() {
   };
 
   const handleInstantDownloadFreeBox = async (preset: BoxPreset) => {
+    if (!requireAuthForFreeDownload(() => handleInstantDownloadFreeBox(preset))) {
+      return;
+    }
     handleUpdateBoxConfig(preset.config);
     try {
       const tempModel = await generateBoxModel({ ...DEFAULT_BOX_CONFIG, ...preset.config }, font);
@@ -288,17 +421,26 @@ export default function App() {
     const tagP = preset as TagPreset;
 
     const basePrice = isBox ? boxP.digitalPrice : (tagP.digitalPrice ?? 2.99);
+    const resolvedBoxConfig = isBox ? { ...DEFAULT_BOX_CONFIG, ...boxP.config } : undefined;
+    const resolvedTagConfig = !isBox ? { ...DEFAULT_TAG_CONFIG, ...tagP.config } : undefined;
+    const paramCode = isBox 
+      ? generateBoxParamCode(resolvedBoxConfig!) 
+      : generateTagParamCode(resolvedTagConfig!);
+
     const newItem: CartItem = {
       id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       productType: type,
       title: preset.name,
+      templateName: preset.name,
+      paramCode,
+      image: preset.image,
       isFree: isBox ? boxP.isFree : (tagP.isFree ?? false),
       unitPrice: basePrice,
       totalPrice: basePrice,
       licenseType: 'personal',
       customText: isBox ? (boxP.config.labelText || 'ORGANIZER') : (tagP.config.text || 'TAG'),
-      boxConfig: isBox ? { ...DEFAULT_BOX_CONFIG, ...boxP.config } : undefined,
-      tagConfig: !isBox ? { ...DEFAULT_TAG_CONFIG, ...tagP.config } : undefined,
+      boxConfig: resolvedBoxConfig,
+      tagConfig: resolvedTagConfig,
       createdAt: Date.now(),
     };
 
@@ -324,7 +466,7 @@ export default function App() {
         theme === 'light' ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-950 text-zinc-100'
       }`}
     >
-      {/* Navigation Header */}
+      {/* Navigation Header with Gated Free/Paid Download Action */}
       <TopHeader
         currentPage={currentPage}
         onNavigate={setCurrentPage}
@@ -336,13 +478,21 @@ export default function App() {
         boxDimensions={(boxModel as any)?.boxDimensions || null}
         theme={theme}
         cartItemCount={cartItems.length}
+        activeTemplate={activeTemplate}
+        isTemplatePurchased={isCurrentTemplatePurchased}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onLogout={handleLogout}
         onOpenCart={() => setIsCartOpen(true)}
         onToggleTheme={() => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))}
         onUpdateTagConfig={handleUpdateTagConfig}
         onUpdateBoxConfig={handleUpdateBoxConfig}
+        onSelectTagPreset={handleSelectTagPreset}
+        onSelectBoxPreset={handleSelectBoxPreset}
         onExportTagSTL={handleExportTagSTL}
         onExportBoxSTL={handleExportBoxSTL}
         onOpenSpecsModal={() => setShowSpecsModal(true)}
+        onPurchaseTemplate={handlePurchaseCurrentTemplate}
       />
 
       {/* Main App Body */}
@@ -362,7 +512,7 @@ export default function App() {
               }}
             />
 
-            {/* Configurator-specific control docks */}
+            {/* Configurator-specific control docks with license gating */}
             {activeConfigurator === 'tag' ? (
               <ControlDock
                 config={tagConfig}
@@ -374,6 +524,11 @@ export default function App() {
                 onExportSTL={handleExportTagSTL}
                 onExportMultiPart={handleExportTagMultiPart}
                 onOpenSpecs={() => setShowSpecsModal(true)}
+                isFree={activeTemplate.isFree}
+                price={activeTemplate.price}
+                isPurchased={isCurrentTemplatePurchased}
+                templateName={activeTemplate.name}
+                onPurchase={handlePurchaseCurrentTemplate}
               />
             ) : (
               <BoxControlDock
@@ -384,6 +539,11 @@ export default function App() {
                 onSelectTab={setActiveBoxSheet}
                 onChange={handleUpdateBoxConfig}
                 onExportSTL={handleExportBoxSTL}
+                isFree={activeTemplate.isFree}
+                price={activeTemplate.price}
+                isPurchased={isCurrentTemplatePurchased}
+                templateName={activeTemplate.name}
+                onPurchase={handlePurchaseCurrentTemplate}
               />
             )}
           </div>
@@ -452,20 +612,33 @@ export default function App() {
           onOrderCompleted={handleOrderCompleted}
         />
 
-        {/* Order Success & Direct File Download Modal */}
-        <OrderSuccessModal
-          isOpen={isOrderSuccessOpen}
-          onClose={() => setIsOrderSuccessOpen(false)}
-          order={completedOrder}
+        {/* Post-Order Download & Slicer Ready Modal */}
+        {completedOrder && (
+          <OrderSuccessModal
+            isOpen={isOrderSuccessOpen}
+            onClose={() => setIsOrderSuccessOpen(false)}
+            order={completedOrder}
+            theme={theme}
+            onGoToDownloads={() => {
+              setIsOrderSuccessOpen(false);
+              setCurrentPage('downloads');
+            }}
+            onGoToStudio={() => {
+              setIsOrderSuccessOpen(false);
+              setCurrentPage('studio');
+            }}
+          />
+        )}
+
+        {/* Free Downloads Authentication Modal */}
+        <AuthModal
+          isOpen={isAuthOpen}
           theme={theme}
-          onGoToDownloads={() => {
-            setIsOrderSuccessOpen(false);
-            setCurrentPage('downloads');
+          onClose={() => {
+            setIsAuthOpen(false);
+            pendingDownloadActionRef.current = null;
           }}
-          onGoToStudio={() => {
-            setIsOrderSuccessOpen(false);
-            setCurrentPage('studio');
-          }}
+          onLoginSuccess={handleLoginSuccess}
         />
       </main>
     </div>

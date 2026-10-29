@@ -24,7 +24,8 @@ import {
   ChevronRight,
   ShoppingBag,
   FileCode,
-  Sliders
+  Sliders,
+  Lock
 } from 'lucide-react';
 
 export type BoxActiveTab = 'dimensions' | 'grid' | 'structure' | 'label' | 'export' | null;
@@ -38,6 +39,11 @@ interface BoxControlDockProps {
   onChange: (partial: Partial<BoxConfig>) => void;
   onExportSTL: (binary: boolean) => void;
   onOpenLicenseModal?: () => void;
+  isFree?: boolean;
+  price?: number;
+  isPurchased?: boolean;
+  templateName?: string;
+  onPurchase?: () => void;
 }
 
 const BOX_COLORS = [
@@ -60,9 +66,15 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
   onChange,
   onExportSTL,
   onOpenLicenseModal,
+  isFree = true,
+  price = 0,
+  isPurchased = false,
+  templateName = '',
+  onPurchase
 }) => {
   const isLight = theme === 'light';
   const isSheetOpen = activeTab !== null;
+  const isUnlocked = isFree || isPurchased;
 
   const stepValue = (
     key: keyof BoxConfig,
@@ -535,32 +547,82 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
             {/* 5. EXPORT / DIGITAL LICENSE TAB */}
             {activeTab === 'export' && (
               <div className="space-y-4">
-                {/* Instant Free / Digital CAD Download */}
-                <button
-                  type="button"
-                  onClick={() => onExportSTL(true)}
-                  className={`w-full p-4 rounded-2xl text-left border transition-all active:scale-[0.98] flex items-center justify-between shadow-md ${
-                    isLight ? 'bg-zinc-900 text-white hover:bg-black' : 'bg-white text-zinc-900 hover:bg-zinc-100'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-xl ${isLight ? 'bg-white/10 text-white' : 'bg-zinc-950/10 text-zinc-950'}`}>
-                      <Download className="w-5 h-5" />
+                {!isUnlocked ? (
+                  /* GATED PREMIUM CAD LICENSE CARD */
+                  <div className={`p-4 sm:p-5 rounded-2xl border space-y-4 ${
+                    isLight ? 'bg-amber-50/80 border-amber-300' : 'bg-amber-950/20 border-amber-800/60'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      <div className="p-3 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                            Commercial CAD License Required
+                          </h4>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase bg-amber-200/80 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
+                            ${(price || 3.50).toFixed(2)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 leading-relaxed">
+                          <strong>{templateName || 'This organizer'}</strong> is a premium parametric template. Free STL downloads are disabled. Purchase a CAD license to export slicer-ready files.
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm block">Download Binary STL</span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-bold uppercase bg-emerald-500 text-white">
-                          FREE
+
+                    <div className="text-xs space-y-1.5 pl-2 border-l-2 border-amber-500/40 text-zinc-600 dark:text-zinc-400">
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span>Commercial physical print rights (sell unlimited printed organizers)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span>Watertight binary STL with smooth scoops & stacking rims</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span>Permanent access & re-downloads in your library</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={onPurchase}
+                      className="w-full py-3 px-4 rounded-xl font-bold text-xs shadow-md bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>Add to Basket & Download (${(price || 3.50).toFixed(2)})</span>
+                    </button>
+                  </div>
+                ) : (
+                  /* Instant Free / Digital CAD Download */
+                  <button
+                    type="button"
+                    onClick={() => onExportSTL(true)}
+                    className="w-full p-4 rounded-2xl text-left border border-emerald-500/40 transition-all active:scale-[0.98] flex items-center justify-between shadow-md bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-white/15 text-white">
+                        <Download className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm block">
+                            {isPurchased ? 'Download Licensed STL' : 'Download Free STL'}
+                          </span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-bold uppercase bg-white/20 text-white">
+                            {isPurchased ? 'LICENSED' : 'FREE'}
+                          </span>
+                        </div>
+                        <span className="text-[11px] block mt-0.5 text-emerald-100">
+                          Watertight slicer-ready model (Bambu, Prusa, Cura, OrcaSlicer)
                         </span>
                       </div>
-                      <span className={`text-[11px] block mt-0.5 ${isLight ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                        Watertight slicer-ready model (Bambu, Prusa, Cura, OrcaSlicer)
-                      </span>
                     </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 opacity-70 shrink-0" />
-                </button>
+                    <ChevronRight className="w-4 h-4 opacity-75 shrink-0" />
+                  </button>
+                )}
 
                 {/* Slicer specs summary */}
                 {dimensions && (
@@ -621,19 +683,26 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
             const isActive = activeTab === tab.id;
 
             if (tab.isCTA) {
+              const CTAIcon = !isUnlocked ? ShoppingBag : Icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => onSelectTab(isActive ? null : tab.id)}
-                  aria-label="Download STL"
+                  aria-label={!isUnlocked ? "Add to Basket" : "Download STL"}
                   className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all active:scale-95 min-h-[48px] min-w-[56px] ${
                     isActive
-                      ? isLight ? 'bg-zinc-900 text-white shadow-md' : 'bg-white text-zinc-950 shadow-md'
-                      : isLight ? 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900' : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-100'
+                      ? !isUnlocked
+                        ? 'bg-amber-600 text-white shadow-md'
+                        : 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                      : !isUnlocked
+                      ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-amber-950 dark:hover:bg-amber-900 dark:text-amber-200'
+                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-800/80'
                   }`}
                 >
-                  <Icon className="w-4 h-4 mb-0.5" />
-                  <span className="text-[10px] font-bold tracking-tight">Download</span>
+                  <CTAIcon className="w-4 h-4 mb-0.5" />
+                  <span className="text-[10px] font-bold tracking-tight">
+                    {!isUnlocked ? 'Basket' : 'Free STL'}
+                  </span>
                 </button>
               );
             }

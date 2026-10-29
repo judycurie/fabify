@@ -61,6 +61,7 @@ export interface BoxPreset {
   id: string;
   name: string;
   description: string;
+  image?: string;
   category: 'desk' | 'hardware' | 'stationery' | 'gridfinity' | 'tech';
   isFree: boolean;
   digitalPrice: number;      // e.g. 0 for free, 3.99 for paid

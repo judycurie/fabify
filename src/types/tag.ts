@@ -4,10 +4,14 @@
 
 export type HolePlacement = 'none' | 'top' | 'left' | 'right' | 'both-ends';
 export type TagStyle = 'embossed' | 'debossed' | 'cutout';
+export type TagShape = 'rounded' | 'circle' | 'rectangle';
 export type FontVariant = 'regular' | 'bold';
 export type AppTheme = 'light' | 'dark';
 
 export interface TagConfig {
+  // Shape Profile
+  shape?: TagShape;          // 'rounded' (default rounded rect) | 'circle' (round pet tag / coin) | 'rectangle'
+
   // Typography - Line 1
   text: string;
   fontSize: number;          // 3 mm to 100 mm (from small key tags to large signs)
@@ -77,7 +81,9 @@ export interface TagPreset {
   id: string;
   name: string;
   description: string;
-  category?: 'everyday' | 'industrial' | 'travel' | 'pet' | 'signage';
+  image?: string;
+  category?: 'everyday' | 'industrial' | 'travel' | 'pet' | 'tag' | 'plate';
+  itemKind?: 'tag' | 'plate';
   isFree?: boolean;
   digitalPrice?: number;
   downloadCount?: number;
