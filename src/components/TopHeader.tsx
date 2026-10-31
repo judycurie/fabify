@@ -31,7 +31,8 @@ import {
   ShieldCheck,
   Check,
   User,
-  LogOut
+  LogOut,
+  Crown
 } from 'lucide-react';
 import { UserProfile } from '../types/auth';
 
@@ -64,6 +65,7 @@ interface TopHeaderProps {
   onExportBoxSTL: (binary: boolean) => void;
   onOpenSpecsModal: () => void;
   onPurchaseTemplate: () => void;
+  onOpenTiersModal?: () => void;
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({
@@ -89,6 +91,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onExportTagSTL,
   onExportBoxSTL,
   onPurchaseTemplate,
+  onOpenTiersModal,
 }) => {
   const [showPresetsMenu, setShowPresetsMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -685,59 +688,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         </div>
       )}
 
-      {/* Mobile-Only Floating 3D Studio Toolset Bar (Toggle + Templates) */}
-      {currentPage === 'studio' && (
-        <div className="sm:hidden fixed top-16 left-1/2 -translate-x-1/2 z-25 flex items-center gap-1 p-1 rounded-2xl border shadow-xl backdrop-blur-xl bg-white/95 dark:bg-zinc-900/95 border-zinc-200/90 dark:border-zinc-800 max-w-[96vw]">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-2 pr-1 select-none shrink-0">
-            Studio:
-          </span>
-
-          {/* Toggle between Tags & Plates and Desk Organizers on Mobile */}
-          <div className="flex items-center p-0.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/70 dark:border-zinc-700/70 shrink-0">
-            <button
-              type="button"
-              onClick={() => onChangeConfigurator('tag')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                activeConfigurator === 'tag'
-                  ? isLight ? 'bg-white text-zinc-950 shadow-sm' : 'bg-zinc-950 text-white shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-              }`}
-            >
-              <TagIcon className="w-3 h-3 opacity-70" />
-              <span>Tags & Plates</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangeConfigurator('box')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                activeConfigurator === 'box'
-                  ? isLight ? 'bg-white text-zinc-950 shadow-sm' : 'bg-zinc-950 text-white shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-              }`}
-            >
-              <BoxIcon className="w-3 h-3 opacity-70" />
-              <span>Organizers</span>
-            </button>
-          </div>
-
-          <div className="h-3.5 w-px bg-zinc-200 dark:bg-zinc-800 mx-0.5 shrink-0" />
-
-          {/* Mobile Templates Button */}
-          <button
-            type="button"
-            onClick={() => setShowMobileTemplates(true)}
-            aria-label="Open Templates"
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all shrink-0 ${
-              isLight
-                ? 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800'
-                : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200'
-            }`}
-          >
-            <Sparkles className="w-3 h-3 opacity-70" />
-            <span>Templates</span>
-          </button>
-        </div>
-      )}
 
       {/* Mobile Templates Bottom Sheet Modal */}
       {showMobileTemplates && (

@@ -588,10 +588,10 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
         className="w-full h-full cursor-grab active:cursor-grabbing" 
       />
 
-      {isLoading && (
+      {isLoading && !model && (
         <div
-          className={`absolute inset-0 flex items-center justify-center pointer-events-none z-20 backdrop-blur-[2px] transition-colors ${
-            isLight ? 'bg-white/40' : 'bg-black/40'
+          className={`absolute inset-0 flex items-center justify-center pointer-events-none z-20 transition-colors ${
+            isLight ? 'bg-white/80' : 'bg-zinc-950/80'
           }`}
         >
           <div
@@ -603,10 +603,25 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
           >
             <div
               className={`w-3.5 h-3.5 border-2 rounded-full animate-spin ${
-                isLight ? 'border-zinc-900 border-t-transparent' : 'border-white border-t-transparent'
+                isLight ? 'border-[#4B00F2] border-t-transparent' : 'border-[#4B00F2] border-t-transparent'
               }`}
             />
-            Computing Watertight Mesh...
+            Initializing 3D Solid Engine...
+          </div>
+        </div>
+      )}
+
+      {isLoading && model && (
+        <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-15 pointer-events-none">
+          <div
+            className={`px-3 py-1.5 rounded-full shadow-md flex items-center gap-2 text-[11px] font-mono border ${
+              isLight
+                ? 'bg-white/90 border-zinc-200 text-zinc-700 shadow-sm'
+                : 'bg-zinc-900/90 border-zinc-800 text-zinc-300 shadow-sm'
+            }`}
+          >
+            <div className="w-2.5 h-2.5 border-2 border-[#4B00F2] border-t-transparent rounded-full animate-spin" />
+            <span>Regenerating...</span>
           </div>
         </div>
       )}

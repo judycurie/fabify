@@ -8,6 +8,7 @@ import { exportSTEP } from '../utils/stepExporter';
 import { generateBoxModel } from '../utils/boxGeometry';
 import { generateTagModel } from '../utils/tagGeometry';
 import { loadHelveticaFont } from '../utils/fontLoader';
+import { sendModelEmail } from '../utils/emailModelService';
 import { 
   Download, 
   FileCode, 
@@ -22,7 +23,10 @@ import {
   Box as BoxIcon,
   Lock,
   LogIn,
-  UserCheck
+  UserCheck,
+  Mail,
+  Loader2,
+  Check
 } from 'lucide-react';
 import { UserProfile } from '../types/auth';
 import { FoundationFootnote } from './FoundationFootnote';
@@ -45,6 +49,8 @@ export const MyDownloadsView: React.FC<MyDownloadsViewProps> = ({
   const [orders] = useState<OrderRecord[]>(getSavedOrders);
   const [searchQuery, setSearchQuery] = useState('');
   const [downloadingItemId, setDownloadingItemId] = useState<string | null>(null);
+  const [emailingItemId, setEmailingItemId] = useState<string | null>(null);
+  const [emailedIds, setEmailedIds] = useState<Record<string, boolean>>({});
 
   const isLight = theme === 'light';
 
@@ -188,6 +194,26 @@ License Grant: ${item.licenseType === 'commercial' ? 'COMMERCIAL 3D PRINTING LIC
     URL.revokeObjectURL(url);
   };
 
+  const handleEmailItem = async (item: CartItem, order: OrderRecord) => {
+    if (!currentUser?.email) return;
+    setEmailingItemId(item.id);
+    try {
+      await sendModelEmail({
+        recipientEmail: currentUser.email,
+        recipientName: currentUser.name || order.customer.fullName,
+        orderId: order.orderId,
+        templateName: item.templateName || item.title,
+        paramCode: item.paramCode,
+        customText: item.customText,
+      });
+      setEmailedIds((prev) => ({ ...prev, [item.id]: true }));
+    } catch (e) {
+      console.warn('Email send error:', e);
+    } finally {
+      setEmailingItemId(null);
+    }
+  };
+
   return (
     <div className="flex-1 w-full overflow-y-auto flex flex-col justify-between">
       {/* Header */}
@@ -316,32 +342,62 @@ License Grant: ${item.licenseType === 'commercial' ? 'COMMERCIAL 3D PRINTING LIC
 
                     <button
                       type="button"
+                      disabled={emailingItemId === item.id}
+                      onClick={() => handleEmailItem(item, order)}
+                      className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                        emailedIds[item.id]
+                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                          : isLight
+                          ? 'hover:bg-zinc-100 border-zinc-300 text-zinc-800'
+                          : 'hover:bg-zinc-800 border-zinc-700 text-zinc-200'
+                      }`}
+                    >
+                      {emailingItemId === item.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : emailedIds[item.id] ? (
+                        <Check className="w-3.5 h-3.5" />
+                      ) : (
+                        <Mail className="w-3.5 h-3.5" />
+                      )}
+                      <span>
+                        {emailingItemId === item.id
+                          ? 'Sending...'
+                          : emailedIds[item.id]
+                          ? 'Emailed!'
+                          : 'Email Files'}
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
                       onClick={() => handleDownloadLicense(item, order)}
                       className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
-                        isLight ? 'hover:bg-zinc-100 border-zinc-300 text-zinc-800' : 'hover:bg-zinc-800 border-zinc-700 text-zinc-200'
+                        isLight ? 'hover:bg-zinc-100 border-zinc-200 text-zinc-700' : 'hover:bg-zinc-800 border-zinc-800 text-zinc-300'
                       }`}
                     >
                       <FileCode className="w-3.5 h-3.5" />
                       <span>License</span>
                     </button>
-                  </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (item.productType === 'box' && item.boxConfig) {
-                        onOpenBoxInStudio(item.boxConfig);
-                      } else if (item.tagConfig) {
-                        onOpenTagInStudio(item.tagConfig);
-                      }
-                    }}
-                    className={`w-full py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
-                      isLight ? 'hover:bg-zinc-100 border-zinc-200 text-zinc-600' : 'hover:bg-zinc-800 border-zinc-800 text-zinc-400'
-                    }`}
-                  >
-                    <Sliders className="w-3.5 h-3.5" />
-                    <span>Open in 3D Configurator</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (item.productType === 'box' && item.boxConfig) {
+                          onOpenBoxInStudio(item.boxConfig);
+                        } else if (item.tagConfig) {
+                          onOpenTagInStudio(item.tagConfig);
+                        }
+                      }}
+                      className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                        isLight ? 'hover:bg-zinc-100 border-zinc-200 text-zinc-700' : 'hover:bg-zinc-800 border-zinc-800 text-zinc-300'
+                      }`}
+                    >
+                      <Sliders className="w-3.5 h-3.5" />
+                      <span>Open in 3D</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

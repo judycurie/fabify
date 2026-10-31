@@ -31,8 +31,7 @@ import { verifyStripeSession } from './utils/stripeService';
 
 import { TopHeader, NavPage, StudioConfigurator } from './components/TopHeader';
 import { Viewport3D } from './components/Viewport3D';
-import { ControlDock, ActiveSheetTab } from './components/ControlDock';
-import { BoxControlDock, BoxActiveTab } from './components/BoxControlDock';
+import { StudioParametersPanel } from './components/StudioParametersPanel';
 import { DimensionsPanel } from './components/DimensionsPanel';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
@@ -41,8 +40,10 @@ import { CatalogView } from './components/CatalogView';
 import { ConfiguratorsView } from './components/ConfiguratorsView';
 import { MyDownloadsView } from './components/MyDownloadsView';
 import { AuthModal } from './components/AuthModal';
+import { ModelTiersModal } from './components/ModelTiersModal';
 import { FoundationFootnote } from './components/FoundationFootnote';
-import { Sparkles, ArrowRight, Lock, Download, ShoppingBag } from 'lucide-react';
+import { sendModelEmail } from './utils/emailModelService';
+import { Sparkles, ArrowRight, Lock, Download, ShoppingBag, Mail, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
   const [theme, setTheme] = useState<AppTheme>('light');
@@ -69,12 +70,9 @@ export default function App() {
     text: 'KEYS',
   });
   const [tagModel, setTagModel] = useState<GeneratedTagModel | null>(null);
-  const [activeTagSheet, setActiveTagSheet] = useState<ActiveSheetTab>(null);
-
   // Box Configurator State
   const [boxConfig, setBoxConfig] = useState<BoxConfig>(DEFAULT_BOX_CONFIG);
   const [boxModel, setBoxModel] = useState<GeneratedTagModel | null>(null);
-  const [activeBoxSheet, setActiveBoxSheet] = useState<BoxActiveTab>(null);
 
   // Shared Engine State
   const [font, setFont] = useState<opentype.Font | null>(null);
@@ -89,6 +87,8 @@ export default function App() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
   const [isOrderSuccessOpen, setIsOrderSuccessOpen] = useState<boolean>(false);
   const [completedOrder, setCompletedOrder] = useState<OrderRecord | null>(null);
+  const [showTiersModal, setShowTiersModal] = useState<boolean>(false);
+  const [emailToastMessage, setEmailToastMessage] = useState<string>('');
 
   const debounceTagRef = useRef<number | null>(null);
   const debounceBoxRef = useRef<number | null>(null);
@@ -333,6 +333,21 @@ export default function App() {
     const filename = getSafeFilename(`${line1}${line2}`, binary ? '' : '_ascii');
     exportSTL(active.exportGeometry, { filename, binary });
     fireExportConfetti();
+
+    // Really send model to user login email
+    if (currentUser?.email) {
+      sendModelEmail({
+        recipientEmail: currentUser.email,
+        recipientName: currentUser.name,
+        templateName: activeTemplate.name,
+        paramCode: generateTagParamCode(tagConfig),
+        customText: tagConfig.text,
+        tierId: 'free',
+      }).then(() => {
+        setEmailToastMessage(`3D model dispatched to ${currentUser.email}`);
+        setTimeout(() => setEmailToastMessage(''), 4500);
+      }).catch(() => {});
+    }
   };
 
   const handleExportTagMultiPart = () => {
@@ -352,6 +367,20 @@ export default function App() {
     const line2 = tagConfig.hasSecondLine && tagConfig.textLine2 ? `_${tagConfig.textLine2.trim().replace(/[^a-zA-Z0-9_-]/g, '_')}` : '';
     exportMultiPartSTL(active.baseGeometry, active.textGeometry, `Tag_${line1}${line2}`);
     fireExportConfetti();
+
+    if (currentUser?.email) {
+      sendModelEmail({
+        recipientEmail: currentUser.email,
+        recipientName: currentUser.name,
+        templateName: activeTemplate.name,
+        paramCode: generateTagParamCode(tagConfig),
+        customText: tagConfig.text,
+        tierId: 'free',
+      }).then(() => {
+        setEmailToastMessage(`Multi-part 3D model dispatched to ${currentUser.email}`);
+        setTimeout(() => setEmailToastMessage(''), 4500);
+      }).catch(() => {});
+    }
   };
 
   // Export Box STL - Gated against unpaid templates and requires login for free download
@@ -374,6 +403,20 @@ export default function App() {
       binary,
     });
     fireExportConfetti();
+
+    if (currentUser?.email) {
+      sendModelEmail({
+        recipientEmail: currentUser.email,
+        recipientName: currentUser.name,
+        templateName: activeTemplate.name,
+        paramCode: generateBoxParamCode(boxConfig),
+        customText: boxConfig.labelText,
+        tierId: 'free',
+      }).then(() => {
+        setEmailToastMessage(`3D container model dispatched to ${currentUser.email}`);
+        setTimeout(() => setEmailToastMessage(''), 4500);
+      }).catch(() => {});
+    }
   };
 
   // Cart Management
@@ -554,6 +597,7 @@ export default function App() {
         onExportBoxSTL={handleExportBoxSTL}
         onOpenSpecsModal={() => setShowSpecsModal(true)}
         onPurchaseTemplate={handlePurchaseCurrentTemplate}
+        onOpenTiersModal={() => setShowTiersModal(true)}
       />
 
       {/* Main App Body */}
@@ -607,47 +651,28 @@ export default function App() {
                 config={currentViewportConfig}
                 theme={theme}
                 isLoading={isLoading || isFontLoading}
-                isSheetOpen={activeConfigurator === 'tag' ? activeTagSheet !== null : activeBoxSheet !== null}
-                onCanvasClick={() => {
-                  setActiveTagSheet(null);
-                  setActiveBoxSheet(null);
-                }}
+                isSheetOpen={false}
+                onCanvasClick={() => {}}
               />
 
-              {/* Configurator-specific control docks with license gating */}
-              {activeConfigurator === 'tag' ? (
-                <ControlDock
-                  config={tagConfig}
-                  dimensions={tagModel?.dimensions || null}
-                  theme={theme}
-                  activeTab={activeTagSheet}
-                  onSelectTab={setActiveTagSheet}
-                  onChange={handleUpdateTagConfig}
-                  onExportSTL={handleExportTagSTL}
-                  onExportMultiPart={handleExportTagMultiPart}
-                  onOpenSpecs={() => setShowSpecsModal(true)}
-                  isFree={activeTemplate.isFree}
-                  price={activeTemplate.price}
-                  isPurchased={isCurrentTemplatePurchased}
-                  templateName={activeTemplate.name}
-                  onPurchase={handlePurchaseCurrentTemplate}
-                />
-              ) : (
-                <BoxControlDock
-                  config={boxConfig}
-                  dimensions={(boxModel as any)?.boxDimensions || null}
-                  theme={theme}
-                  activeTab={activeBoxSheet}
-                  onSelectTab={setActiveBoxSheet}
-                  onChange={handleUpdateBoxConfig}
-                  onExportSTL={handleExportBoxSTL}
-                  isFree={activeTemplate.isFree}
-                  price={activeTemplate.price}
-                  isPurchased={isCurrentTemplatePurchased}
-                  templateName={activeTemplate.name}
-                  onPurchase={handlePurchaseCurrentTemplate}
-                />
-              )}
+              {/* Single Integrated Right Parameters Navigation Window (stars-flakes architecture) */}
+              <StudioParametersPanel
+                theme={theme}
+                activeConfigurator={activeConfigurator}
+                onChangeConfigurator={handleChangeConfigurator}
+                activeTemplate={activeTemplate}
+                isTemplatePurchased={isCurrentTemplatePurchased}
+                tagConfig={tagConfig}
+                tagDimensions={tagModel?.dimensions || null}
+                onUpdateTagConfig={handleUpdateTagConfig}
+                onExportTagSTL={handleExportTagSTL}
+                onExportTagMultiPart={handleExportTagMultiPart}
+                boxConfig={boxConfig}
+                boxDimensions={(boxModel as any)?.boxDimensions || null}
+                onUpdateBoxConfig={handleUpdateBoxConfig}
+                onExportBoxSTL={handleExportBoxSTL}
+                onPurchaseTemplate={handlePurchaseCurrentTemplate}
+              />
             </div>
 
             {/* Studio Bottom Footnote Bar with FFP Logotype and Mission Note */}
@@ -758,6 +783,33 @@ export default function App() {
           }}
           onLoginSuccess={handleLoginSuccess}
         />
+
+        {/* CAD Model & Licensing Tiers Modal */}
+        <ModelTiersModal
+          isOpen={showTiersModal}
+          onClose={() => setShowTiersModal(false)}
+          theme={theme}
+          onSelectTier={(tierId) => {
+            if (tierId === 'tier2_subscription') {
+              handlePurchaseCurrentTemplate();
+            } else if (tierId === 'tier1_static') {
+              handlePurchaseCurrentTemplate();
+            }
+          }}
+        />
+
+        {/* Global Email Dispatch Toast */}
+        {emailToastMessage && (
+          <div className="fixed top-16 right-4 sm:right-6 z-50 p-4 rounded-2xl bg-zinc-950/95 text-white dark:bg-white/95 dark:text-zinc-950 shadow-2xl border border-zinc-800 dark:border-zinc-200 flex items-center gap-3 backdrop-blur-md animate-fade-in max-w-sm">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 dark:text-emerald-600 flex items-center justify-center shrink-0">
+              <Mail className="w-4 h-4" />
+            </div>
+            <div className="text-xs">
+              <strong className="block font-bold">Email Dispatched</strong>
+              <span className="opacity-80 text-[11px] leading-tight block">{emailToastMessage}</span>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

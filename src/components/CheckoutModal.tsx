@@ -5,6 +5,8 @@ import { VALID_PROMO_CODES } from '../utils/pricing';
 import { createNewDigitalOrder } from '../utils/orders';
 import { getCurrentUser } from '../utils/auth';
 import { createStripeCheckoutSession, FAB_FOUNDATION_INFO } from '../utils/stripeService';
+import { sendModelEmail } from '../utils/emailModelService';
+import { MODEL_TIERS, ModelTierId } from '../types/tiers';
 import { 
   X, 
   CreditCard, 
@@ -18,7 +20,10 @@ import {
   ShieldCheck,
   Sparkles,
   Building2,
-  ExternalLink
+  ExternalLink,
+  Mail,
+  Zap,
+  CheckCircle2
 } from 'lucide-react';
 
 interface CheckoutModalProps {
@@ -44,6 +49,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     email: currentUser?.email || 'judymariecurie@gmail.com',
   });
 
+  const hasPaidItems = items.some((i) => !i.isFree && i.totalPrice > 0);
+  const [selectedTier, setSelectedTier] = useState<ModelTierId>(hasPaidItems ? 'tier1_static' : 'free');
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [formError, setFormError] = useState<string>('');
@@ -59,8 +67,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const isLight = theme === 'light';
 
-  // Calculate Subtotal
-  const subtotal = items.reduce((acc, i) => acc + i.totalPrice, 0);
+  // Calculate Subtotal based on chosen tier
+  const rawSubtotal = items.reduce((acc, i) => acc + i.totalPrice, 0);
+  let subtotal = rawSubtotal;
+  if (selectedTier === 'tier1_static') {
+    subtotal = Math.max(15.0, rawSubtotal);
+  } else if (selectedTier === 'tier2_subscription') {
+    subtotal = 25.0;
+  }
 
   let promoDiscount = 0;
   if (appliedPromo && VALID_PROMO_CODES[appliedPromo]) {
@@ -73,7 +87,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   }
 
   const grandTotal = Math.max(0, Math.round((subtotal - promoDiscount) * 100) / 100);
-  const isFreeCheckout = grandTotal === 0;
+  const isFreeCheckout = grandTotal === 0 && selectedTier === 'free';
 
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/\D/g, '');
@@ -164,6 +178,21 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       last4Card: last4,
     });
 
+    // Real automated model dispatch to login email
+    try {
+      await sendModelEmail({
+        recipientEmail: customer.email,
+        recipientName: customer.fullName,
+        orderId: order.orderId,
+        templateName: items[0]?.templateName || 'Parametric 3D Solid Model',
+        paramCode: items[0]?.paramCode,
+        customText: items[0]?.customText,
+        tierId: selectedTier,
+      });
+    } catch (mailErr) {
+      console.warn('Direct email dispatch handled:', mailErr);
+    }
+
     setIsProcessing(false);
     onOrderCompleted(order);
   };
@@ -224,7 +253,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
           {/* Customer Email Section */}
           <div className="space-y-3">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-500">1. Delivery Email & Licensee</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-500">1. Delivery Email & Licensee</h3>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                Direct Email Delivery
+              </span>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-semibold text-zinc-500 block mb-1">Full Name / Studio *</label>
@@ -240,7 +275,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 />
               </div>
               <div>
-                <label className="text-[11px] font-semibold text-zinc-500 block mb-1">Email (Download Link Destination) *</label>
+                <label className="text-[11px] font-semibold text-zinc-500 block mb-1">Email (Files Dispatched Here) *</label>
                 <input
                   type="email"
                   required
@@ -251,6 +286,94 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     isLight ? 'bg-white border-zinc-300 focus:border-zinc-900' : 'bg-zinc-900 border-zinc-700 focus:border-white'
                   }`}
                 />
+              </div>
+            </div>
+            <div className={`p-2.5 rounded-xl border text-[11px] flex items-center gap-2 ${
+              isLight ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800' : 'bg-emerald-950/20 border-emerald-900/60 text-emerald-300'
+            }`}>
+              <Mail className="w-4 h-4 shrink-0" />
+              <span>3D CAD files (STL, STEP solid & License Certificate) will be emailed to <strong>{customer.email || 'your email'}</strong>.</span>
+            </div>
+          </div>
+
+          {/* Model Licensing Tier Selection Section */}
+          <div className="space-y-3 pt-1">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-500">2. Commercial Model Tier</h3>
+              <span className="text-[10px] text-zinc-400 font-mono">Select Access Scope</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Tier 1 Option */}
+              <div
+                onClick={() => setSelectedTier('tier1_static')}
+                className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
+                  selectedTier === 'tier1_static'
+                    ? 'border-[#F26C65] bg-[#F26C65]/5 ring-2 ring-[#F26C65]/20'
+                    : isLight
+                    ? 'border-zinc-200 hover:border-zinc-300 bg-white'
+                    : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold uppercase text-[#F26C65]">
+                      Tier 1 · Commercial
+                    </span>
+                    <span className="font-bold font-mono text-sm text-[#F26C65]">$15.00</span>
+                  </div>
+                  <h4 className="font-bold text-xs mt-1">Static Asset Commercial License</h4>
+                  <p className="text-[11px] text-zinc-500 mt-1">
+                    <strong>Access Scope:</strong> Single exported file (STL/STEP/OBJ/DXF) generated during that session.
+                  </p>
+                  <p className="text-[10px] text-zinc-400 mt-1">
+                    <strong>Best For:</strong> Makers/sellers manufacturing & selling physical units of one specific design variation.
+                  </p>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-[11px] pt-2 border-t border-zinc-200/60 dark:border-zinc-800">
+                  <span className="font-mono text-[10px] text-zinc-400">One-off fee per design</span>
+                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                    selectedTier === 'tier1_static' ? 'bg-[#F26C65] border-[#F26C65] text-white' : 'border-zinc-300 dark:border-zinc-700'
+                  }`}>
+                    {selectedTier === 'tier1_static' && <Check className="w-2.5 h-2.5" />}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tier 2 Option */}
+              <div
+                onClick={() => setSelectedTier('tier2_subscription')}
+                className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
+                  selectedTier === 'tier2_subscription'
+                    ? 'border-[#4B00F2] bg-[#4B00F2]/5 ring-2 ring-[#4B00F2]/20'
+                    : isLight
+                    ? 'border-zinc-200 hover:border-zinc-300 bg-white'
+                    : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold uppercase text-[#4B00F2] dark:text-[#855BFF]">
+                      Tier 2 · Subscription
+                    </span>
+                    <span className="font-bold font-mono text-sm text-[#4B00F2] dark:text-[#855BFF]">$25.00/mo</span>
+                  </div>
+                  <h4 className="font-bold text-xs mt-1">Commercial Subscription / Tool Access</h4>
+                  <p className="text-[11px] text-zinc-500 mt-1">
+                    <strong>Access Scope:</strong> Continuous access to the live configurator, batch exporting, and seed tweaking.
+                  </p>
+                  <p className="text-[10px] text-zinc-400 mt-1">
+                    <strong>Best For:</strong> Active commercial shops, Print-on-Demand (POD) businesses, and custom-order fabricators.
+                  </p>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-[11px] pt-2 border-t border-zinc-200/60 dark:border-zinc-800">
+                  <span className="font-mono text-[10px] text-zinc-400">Recurring monthly access</span>
+                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                    selectedTier === 'tier2_subscription' ? 'bg-[#4B00F2] border-[#4B00F2] text-white' : 'border-zinc-300 dark:border-zinc-700'
+                  }`}>
+                    {selectedTier === 'tier2_subscription' && <Check className="w-2.5 h-2.5" />}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

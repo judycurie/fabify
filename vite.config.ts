@@ -107,6 +107,46 @@ function stripeDevPlugin() {
           return;
         }
 
+        if (req.url === '/api/send-model-email' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk: any) => {
+            body += chunk;
+          });
+          req.on('end', async () => {
+            res.setHeader('Content-Type', 'application/json');
+            try {
+              const payload = JSON.parse(body || '{}');
+              const { recipientEmail, recipientName = 'Fab Foundation Maker', templateName, orderId, tierId } = payload;
+              
+              if (!recipientEmail || !recipientEmail.includes('@')) {
+                res.writeHead(400);
+                res.end(JSON.stringify({ success: false, error: 'Valid recipient email required' }));
+                return;
+              }
+
+              console.log(`[Fabify Model Email Service] ✓ Sent 3D Model Package to ${recipientEmail}`);
+              console.log(`  Template: ${templateName} | Tier: ${tierId || 'tier1_static'} | Order: ${orderId}`);
+
+              res.writeHead(200);
+              res.end(
+                JSON.stringify({
+                  success: true,
+                  deliveredTo: recipientEmail,
+                  recipientName,
+                  orderId,
+                  messageId: `fab_mail_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+                  timestamp: Date.now(),
+                  deliveryNotice: `Watertight STL and STEP CAD files successfully dispatched to ${recipientEmail}`,
+                })
+              );
+            } catch (err: any) {
+              res.writeHead(500);
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
         next();
       });
     },

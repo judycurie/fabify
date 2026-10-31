@@ -15,7 +15,7 @@ import { Evaluator, Brush, SUBTRACTION, ADDITION } from 'three-bvh-csg';
 import { BoxConfig, BoxDimensions } from '../types/box';
 import { GeneratedTagModel } from './tagGeometry';
 import { TagDimensions } from '../types/tag';
-import { generateTextShapes } from './fontLoader';
+import { generateTextShapes, loadHelveticaFont } from './fontLoader';
 import { analyzeMeshWatertightness } from './meshAnalyzer';
 
 /**
@@ -47,6 +47,7 @@ export async function generateBoxModel(
   config: BoxConfig,
   font?: opentype.Font | null
 ): Promise<GeneratedTagModel> {
+  const activeFont = font || (await loadHelveticaFont('bold'));
   const {
     width,
     depth,
@@ -54,6 +55,7 @@ export async function generateBoxModel(
     wallThickness,
     floorThickness,
     filletRadius,
+    edgeBevel = 0.6,
     gridColumns,
     gridRows,
     dividerThickness,
@@ -64,9 +66,9 @@ export async function generateBoxModel(
     stackingLipHeight,
     hasLabel,
     labelText,
-    labelFontSize,
+    labelFontSize = 7.0,
     labelStyle,
-    labelRelief,
+    labelRelief = 1.0,
     primaryColor,
     accentColor,
   } = config;
@@ -100,8 +102,9 @@ export async function generateBoxModel(
   let currentBrush = new Brush(outerGeo);
   currentBrush.updateMatrixWorld();
 
-  // 3. Subtract Cavity Pockets (with optional finger scoop)
+  // 3. Subtract Cavity Pockets (Combined into single CSG boolean for instant responsiveness)
   const cavityCornerRadius = Math.max(0.5, Math.min(filletRadius - wallThickness, 8));
+  const pocketShapes: THREE.Shape[] = [];
 
   for (let c = 0; c < cols; c++) {
     for (let r = 0; r < rows; r++) {
@@ -109,25 +112,41 @@ export async function generateBoxModel(
       const posX = -width / 2 + wallThickness + c * (pocketWidth + dividerThickness) + pocketWidth / 2;
       const posY = -depth / 2 + wallThickness + r * (pocketDepth + dividerThickness) + pocketDepth / 2;
 
-      // Base pocket shape
-      const pocketShape = createRoundedRectShape(pocketWidth, pocketDepth, cavityCornerRadius);
-      // Cut slightly past top for clean CSG boolean
-      const cutHeight = pocketHeight + 4.0;
-      const pocketGeo = new THREE.ExtrudeGeometry(pocketShape, {
-        depth: cutHeight,
-        bevelEnabled: false,
-      });
+      // Positioned pocket shape
+      const pShape = new THREE.Shape();
+      const px = posX - pocketWidth / 2;
+      const py = posY - pocketDepth / 2;
+      const pr = Math.min(cavityCornerRadius, Math.min(pocketWidth, pocketDepth) / 2);
 
-      // Align cavity bottom with floorThickness
-      pocketGeo.translate(posX, posY, floorThickness);
-      pocketGeo.computeVertexNormals();
+      pShape.moveTo(px + pr, py);
+      pShape.lineTo(px + pocketWidth - pr, py);
+      pShape.quadraticCurveTo(px + pocketWidth, py, px + pocketWidth, py + pr);
+      pShape.lineTo(px + pocketWidth, py + pocketDepth - pr);
+      pShape.quadraticCurveTo(px + pocketWidth, py + pocketDepth, px + pocketWidth - pr, py + pocketDepth);
+      pShape.lineTo(px + pr, py + pocketDepth);
+      pShape.quadraticCurveTo(px, py + pocketDepth, px, py + pocketDepth - pr);
+      pShape.lineTo(px, py + pr);
+      pShape.quadraticCurveTo(px, py, px + pr, py);
 
-      const pocketBrush = new Brush(pocketGeo);
-      pocketBrush.updateMatrixWorld();
-
-      currentBrush = evaluator.evaluate(currentBrush, pocketBrush, SUBTRACTION);
-      currentBrush.updateMatrixWorld();
+      pocketShapes.push(pShape);
     }
+  }
+
+  if (pocketShapes.length > 0) {
+    const cutHeight = pocketHeight + 4.0;
+    const combinedPocketGeo = new THREE.ExtrudeGeometry(pocketShapes, {
+      depth: cutHeight,
+      bevelEnabled: false,
+      curveSegments: 12,
+    });
+    combinedPocketGeo.translate(0, 0, floorThickness);
+    combinedPocketGeo.computeVertexNormals();
+
+    const pocketsBrush = new Brush(combinedPocketGeo);
+    pocketsBrush.updateMatrixWorld();
+
+    currentBrush = evaluator.evaluate(currentBrush, pocketsBrush, SUBTRACTION);
+    currentBrush.updateMatrixWorld();
   }
 
   // 4. Stacking Lip (if enabled): Step around the top rim
@@ -153,10 +172,10 @@ export async function generateBoxModel(
   let textGeometry: THREE.BufferGeometry | undefined;
   let textMesh: THREE.Mesh | undefined;
 
-  if (hasLabel && labelText && labelText.trim().length > 0 && font) {
+  if (hasLabel && labelText && labelText.trim().length > 0 && activeFont) {
     try {
       const textResult = generateTextShapes(
-        font,
+        activeFont,
         labelText.trim(),
         labelFontSize,
         0.3
@@ -229,23 +248,41 @@ export async function generateBoxModel(
         // Clamp Z strictly so text never drops below floor or rises above top rim
         const zPos = Math.max(minZ, Math.min(maxZ - actualH, targetZ));
 
-        // Front face is at y = -depth / 2
+        // Infallible bounding box calculation of the box's outer surface:
+        currentBrush.geometry.computeBoundingBox();
+        const boxBounds = currentBrush.geometry.boundingBox;
+        const frontWallY = boxBounds ? boxBounds.min.y : -depth / 2;
+
+        // Front face is at y = frontWallY
         if (labelStyle === 'embossed') {
-          // Embed 0.15mm into front wall for watertight manifold Boolean addition
-          const yPos = -depth / 2 + 0.15;
+          // Embed base of text 0.15mm into front wall for watertight manifold Boolean addition
+          // Text geometry after rotateX(PI/2) has y' in [-labelRelief, 0].
+          // Translating by yPos = frontWallY + 0.15:
+          // Base (y'=0) is at frontWallY + 0.15 (0.15mm embedded in front wall)
+          // Front (y'=-labelRelief) is at frontWallY - labelRelief + 0.15 (protruding clearly towards camera at -Y)
+          const yPos = frontWallY + 0.15;
           rawTextGeo.translate(xPos, yPos, zPos);
           rawTextGeo.computeVertexNormals();
           textGeometry = rawTextGeo;
 
           const textMat = new THREE.MeshStandardMaterial({
-            color: new THREE.Color(accentColor),
-            roughness: 0.35,
-            metalness: 0.1,
+            color: new THREE.Color(accentColor || '#ffffff'),
+            roughness: 0.25,
+            metalness: 0.05,
+            side: THREE.DoubleSide,
+            depthTest: true,
+            depthWrite: true,
+            polygonOffset: true,
+            polygonOffsetFactor: -4,
+            polygonOffsetUnits: -4,
           });
           textMesh = new THREE.Mesh(textGeometry, textMat);
+          textMesh.castShadow = true;
+          textMesh.receiveShadow = true;
+          textMesh.renderOrder = 10;
         } else {
           // Debossed: cut into front wall
-          const yPos = -depth / 2 + labelRelief + 0.05;
+          const yPos = frontWallY + labelRelief + 0.1;
           rawTextGeo.translate(xPos, yPos, zPos);
           rawTextGeo.computeVertexNormals();
 
