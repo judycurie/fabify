@@ -235,10 +235,10 @@ export default function App() {
     setActiveConfigurator(mode);
     if (mode === 'box' && activeTemplate.productType !== 'box') {
       setActiveTemplate({
-        id: 'free_desk_catchall',
+        id: 'paid_desk_catchall',
         name: 'Catchall Tray',
-        isFree: true,
-        price: 0,
+        isFree: false,
+        price: 3.50,
         productType: 'box',
       });
     } else if (mode === 'tag' && activeTemplate.productType !== 'tag') {
