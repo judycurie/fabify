@@ -2,7 +2,7 @@ import { TagConfig, TagPreset } from '../types/tag';
 
 export const DEFAULT_TAG_CONFIG: TagConfig = {
   shape: 'rounded',
-  text: 'FORGE 3D',
+  text: 'KEYS',
   fontSize: 7.0,
   fontVariant: 'bold',
   letterSpacing: 0.4,
@@ -44,8 +44,8 @@ export const TAG_PRESETS: TagPreset[] = [
      ========================================================================= */
   {
     id: 'keychain',
-    name: 'Keychain Tag',
-    description: 'Pocket keyring tag with reinforced hole and tactile chamfered edges',
+    name: 'Tag Keys',
+    description: 'Pocket keyring tag for keys with reinforced mounting hole and tactile chamfered edges',
     image: '/images/render_keychain_tag_1793271969252.jpg',
     category: 'everyday',
     itemKind: 'tag',
@@ -54,7 +54,7 @@ export const TAG_PRESETS: TagPreset[] = [
     configuratorType: 'tag',
     popular: true,
     config: {
-      text: 'FORGE 3D',
+      text: 'KEYS',
       fontSize: 6.8,
       fontVariant: 'bold',
       baseThickness: 2.4,
@@ -285,6 +285,7 @@ export const TAG_PRESETS: TagPreset[] = [
     configuratorType: 'tag',
     popular: true,
     config: {
+      shape: 'rounded',
       text: 'STUDIO 402',
       hasSecondLine: true,
       textLine2: 'PRIVATE',

@@ -66,6 +66,8 @@ export function getSavedOrders(): OrderRecord[] {
               labelFontSize: 7.0,
               labelStyle: 'embossed',
               labelRelief: 1.0,
+              textPosition: 'front_center',
+              textVerticalOffset: 0,
               primaryColor: '#18181b',
               accentColor: '#ffffff',
               showDimensions3D: true,

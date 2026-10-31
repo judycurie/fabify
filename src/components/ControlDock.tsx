@@ -42,6 +42,7 @@ interface ControlDockProps {
   onSelectTab: (tab: ActiveSheetTab) => void;
   onChange: (partial: Partial<TagConfig>) => void;
   onExportSTL: (binary: boolean) => void;
+  onExportSTEP?: () => void;
   onExportMultiPart: () => void;
   onOpenSpecs?: () => void;
   onOpenOrderModal?: () => void;
@@ -71,6 +72,7 @@ export const ControlDock: React.FC<ControlDockProps> = ({
   onSelectTab,
   onChange,
   onExportSTL,
+  onExportSTEP,
   onExportMultiPart,
   onOpenSpecs,
   onOpenOrderModal,
@@ -81,7 +83,33 @@ export const ControlDock: React.FC<ControlDockProps> = ({
   onPurchase
 }) => {
   const isLight = theme === 'light';
-  const isUnlocked = isFree || isPurchased;
+  const tName = templateName?.toLowerCase() || '';
+  const isPaidPlate = 
+    !isFree || 
+    price > 0 ||
+    tName.includes('door') ||
+    tName.includes('plate') ||
+    tName.includes('sign') ||
+    tName.includes('nameplate') ||
+    tName.includes('stencil') ||
+    tName.includes('machine') ||
+    tName.includes('rating') ||
+    (config.shape === 'rounded' && config.holePlacement === 'both-ends');
+
+  const isUnlocked = !isPaidPlate || isPurchased;
+
+  const isDoorSignPlate = 
+    tName.includes('door') || 
+    tName.includes('plate') || 
+    tName.includes('sign') ||
+    (config.shape === 'rounded' && config.holePlacement === 'both-ends');
+
+  // Door sign plate should NOT have circle option - default to rounded
+  React.useEffect(() => {
+    if (isDoorSignPlate && config.shape === 'circle') {
+      onChange({ shape: 'rounded' });
+    }
+  }, [isDoorSignPlate, config.shape, onChange]);
 
   // Dynamic maximum ranges based on font size
   const fs = config.fontSize;
@@ -145,42 +173,33 @@ export const ControlDock: React.FC<ControlDockProps> = ({
         </div>
       )}
 
-      {/* Slide-Up Bottom Sheet Drawer */}
+      {/* Slide-in Flyout Panel from the Right */}
       <div
-        className={`fixed left-0 right-0 z-30 transition-all duration-300 ease-out sm:max-w-xl sm:left-1/2 sm:-translate-x-1/2 ${
+        className={`fixed right-12 sm:right-16 top-14 sm:top-16 bottom-11 sm:bottom-14 z-30 transition-all duration-300 ease-out w-[calc(100vw-58px)] sm:w-[380px] max-w-[420px] ${
           isSheetOpen
-            ? 'bottom-16 sm:bottom-20 translate-y-0 opacity-100'
-            : 'bottom-0 translate-y-full opacity-0 pointer-events-none'
+            ? 'translate-x-0 opacity-100 pointer-events-auto'
+            : 'translate-x-8 opacity-0 pointer-events-none'
         }`}
       >
         <div
-          className={`rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden border-t sm:border backdrop-blur-2xl transition-colors duration-200 flex flex-col ${
+          className={`h-full rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border backdrop-blur-2xl transition-colors duration-200 flex flex-col ${
             isLight
               ? 'bg-white/98 border-zinc-200 shadow-zinc-400/40 text-zinc-900'
               : 'bg-zinc-900/98 border-zinc-800 shadow-black text-zinc-100'
           }`}
         >
-          {/* Mobile Drag Handle */}
-          <div 
-            onClick={() => onSelectTab(null)}
-            className="pt-2.5 pb-1 flex justify-center cursor-pointer active:opacity-60"
-            title="Tap to close"
-          >
-            <div className={`w-12 h-1.5 rounded-full ${isLight ? 'bg-zinc-300' : 'bg-zinc-700'}`} />
-          </div>
-
           {/* Sheet Header with Tab Title & "Done" Button */}
           <div
-            className={`px-4 sm:px-5 py-2.5 border-b flex items-center justify-between transition-colors duration-200 ${
+            className={`px-4 sm:px-5 py-3 border-b flex items-center justify-between shrink-0 transition-colors duration-200 ${
               isLight ? 'bg-zinc-50/80 border-zinc-200' : 'bg-zinc-950/70 border-zinc-800'
             }`}
           >
             <div className="flex items-center gap-2">
-              {activeTab === 'text' && <Type className="w-4 h-4" />}
-              {activeTab === 'base' && <Box className="w-4 h-4" />}
-              {activeTab === 'holes' && <CircleDot className="w-4 h-4" />}
-              {activeTab === 'style' && <Palette className="w-4 h-4" />}
-              {activeTab === 'export' && <Download className="w-4 h-4" />}
+              {activeTab === 'text' && <Type className="w-4 h-4 text-[#4B00F2]" />}
+              {activeTab === 'base' && <Box className="w-4 h-4 text-[#4B00F2]" />}
+              {activeTab === 'holes' && <CircleDot className="w-4 h-4 text-[#4B00F2]" />}
+              {activeTab === 'style' && <Palette className="w-4 h-4 text-[#4B00F2]" />}
+              {activeTab === 'export' && <Download className="w-4 h-4 text-[#4B00F2]" />}
               <h2 className="text-sm font-bold tracking-tight">
                 {activeTab === 'text' && 'Text & Typography'}
                 {activeTab === 'base' && 'Tag Base & Fillets'}
@@ -192,19 +211,18 @@ export const ControlDock: React.FC<ControlDockProps> = ({
 
             <button
               onClick={() => onSelectTab(null)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center gap-1 ${
+              className={`p-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95 flex items-center gap-1 ${
                 isLight
-                  ? 'bg-zinc-900 text-white hover:bg-black shadow-sm'
-                  : 'bg-white text-zinc-950 hover:bg-zinc-100 shadow-sm'
+                  ? 'hover:bg-zinc-100 border-zinc-200 text-zinc-700'
+                  : 'hover:bg-zinc-800 border-zinc-700 text-zinc-300'
               }`}
             >
-              <span>Done</span>
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Sheet Scrollable Content */}
-          <div className="p-4 sm:p-5 max-h-[56vh] sm:max-h-[440px] overflow-y-auto overscroll-contain">
+          <div className="p-4 sm:p-5 flex-1 overflow-y-auto overscroll-contain">
             {/* 1. TEXT TAB */}
             {activeTab === 'text' && (
               <div className="space-y-4">
@@ -468,20 +486,26 @@ export const ControlDock: React.FC<ControlDockProps> = ({
             {/* 2. BASE & FILLET EDGES TAB */}
             {activeTab === 'base' && (
               <div className="space-y-4">
-                {/* Shape Profile Selection (Round Circle for Pet Tags / Rounded Rect / Rectangle) */}
+                {/* Shape Profile Selection (No circle option for door signs / plates) */}
                 <div className={`p-3.5 rounded-2xl border ${isLight ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-950 border-zinc-800'}`}>
                   <div className="flex justify-between items-center text-xs mb-2">
                     <span className="font-bold">Shape Profile</span>
                     <span className="font-mono text-[11px] font-semibold text-zinc-500 uppercase">
-                      {config.shape === 'circle' ? 'Round (Circle)' : config.shape === 'rectangle' ? 'Rectangle' : 'Rounded Rect'}
+                      {config.shape === 'circle' ? 'Round (Circle)' : config.shape === 'rectangle' ? 'Rectangle' : 'Rounded Rect (Default)'}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[
-                      { id: 'rounded', label: 'Rounded Rect', desc: 'Pill / Filleted' },
-                      { id: 'circle', label: 'Round (Circle)', desc: 'Pet Tag / Disc' },
-                      { id: 'rectangle', label: 'Rectangle', desc: 'Square 90°' },
-                    ].map((s) => {
+                  <div className={`grid ${isDoorSignPlate ? 'grid-cols-2' : 'grid-cols-3'} gap-1.5`}>
+                    {(isDoorSignPlate
+                      ? [
+                          { id: 'rounded', label: 'Rounded Rect', desc: 'Pill / Filleted (Default)' },
+                          { id: 'rectangle', label: 'Rectangle', desc: 'Square 90°' },
+                        ]
+                      : [
+                          { id: 'rounded', label: 'Rounded Rect', desc: 'Pill / Filleted' },
+                          { id: 'circle', label: 'Round (Circle)', desc: 'Pet Tag / Disc' },
+                          { id: 'rectangle', label: 'Rectangle', desc: 'Square 90°' },
+                        ]
+                    ).map((s) => {
                       const isSelected = (config.shape || 'rounded') === s.id;
                       return (
                         <button
@@ -619,7 +643,7 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                     isLight ? 'bg-zinc-50 border-zinc-200 text-zinc-600' : 'bg-zinc-950 border-zinc-800 text-zinc-400'
                   }`}>
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="w-2 h-2 rounded-full bg-[#4B00F2]" />
                       <span className="font-semibold text-zinc-800 dark:text-zinc-200">360° Circular Perimeter</span>
                     </div>
                     <span className="text-[11px] font-mono text-zinc-500">Continuous Arc</span>
@@ -1039,12 +1063,12 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                 )}
 
                 {!isUnlocked ? (
-                  /* GATED PREMIUM CAD LICENSE CARD */
+                  /* GATED PREMIUM CAD LICENSE CARD - ONLY OPTION IS ADD TO BASKET */
                   <div className={`p-4 sm:p-5 rounded-2xl border space-y-4 ${
                     isLight ? 'bg-amber-50/80 border-amber-300' : 'bg-amber-950/20 border-amber-800/60'
                   }`}>
                     <div className="flex items-start gap-3">
-                      <div className="p-3 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
+                      <div className="p-3 rounded-xl bg-[#F26C65]/15 text-[#F26C65] shrink-0">
                         <Lock className="w-5 h-5" />
                       </div>
                       <div>
@@ -1052,72 +1076,97 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                           <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                             Commercial CAD License Required
                           </h4>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase bg-amber-200/80 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase bg-[#F26C65]/15 text-[#F26C65] border border-[#F26C65]/30">
                             ${(price || 2.99).toFixed(2)}
                           </span>
                         </div>
                         <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 leading-relaxed">
-                          <strong>{templateName || 'This template'}</strong> is a premium commercial design. Free STL downloads are disabled. Purchase a CAD license to export watertight slicer-ready STLs.
+                          <strong>{templateName || 'This template'}</strong> is a commercial design. Free models generate STLs, while paid models generate production <strong>STEP (.step)</strong> CAD files plus slice-ready STLs.
                         </p>
                       </div>
                     </div>
 
-                    <div className="text-xs space-y-1.5 pl-2 border-l-2 border-amber-500/40 text-zinc-600 dark:text-zinc-400">
+                    <div className="text-xs space-y-1.5 pl-2 border-l-2 border-[#F26C65]/40 text-zinc-600 dark:text-zinc-400">
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-[#4B00F2] shrink-0" />
+                        <span>Generates Production STEP (.step) CAD file for Fusion 360 & SolidWorks</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-[#4B00F2] shrink-0" />
                         <span>Commercial physical print rights (sell unlimited prints)</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-[#4B00F2] shrink-0" />
                         <span>Watertight binary STL + dual-color multi-part exports</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-[#4B00F2] shrink-0" />
                         <span>Permanent access & re-downloads in your library</span>
                       </div>
                     </div>
 
+                    {/* ONLY OPTION FOR PAID MODEL: ADD TO BASKET */}
                     <button
                       type="button"
                       onClick={onPurchase}
-                      className="w-full py-3 px-4 rounded-xl font-bold text-xs shadow-md bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                      className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-[#F26C65] hover:bg-[#D9554E] text-white flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-md shadow-[#F26C65]/20"
                     >
-                      <ShoppingBag className="w-4 h-4" />
-                      <span>Add to Basket & Download (${(price || 3.50).toFixed(2)})</span>
+                      <ShoppingBag className="w-4 h-4 text-white" />
+                      <span>Add to Basket (${(price || 3.50).toFixed(2)})</span>
                     </button>
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center gap-2 text-xs text-zinc-400 py-1">
-                      <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1" />
-                      <span>{isPurchased ? 'Licensed STL Download' : 'Free Community STL Download'}</span>
-                      <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1" />
-                    </div>
+                    {/* For Purchased Paid Models: Generate Production CAD STEP */}
+                    {isPurchased && onExportSTEP && (
+                      <button
+                        onClick={onExportSTEP}
+                        className="w-full p-4 rounded-2xl text-left border border-transparent transition-all active:scale-[0.98] flex items-center justify-between bg-[#F26C65] hover:bg-[#D9554E] text-white shadow-md shadow-[#F26C65]/20 cursor-pointer mb-2.5"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-white/20 text-white">
+                            <FileCode className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-sm block">Download Production STEP (.step)</span>
+                              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/25 text-white font-bold uppercase">
+                                CAD SOLID
+                              </span>
+                            </div>
+                            <span className="text-[11px] block mt-0.5 text-white/90">
+                              ISO 10303-21 standard for SolidWorks, Fusion 360, FreeCAD
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 opacity-80 shrink-0" />
+                      </button>
+                    )}
 
-                    {/* Primary STL Download Card */}
+                    {/* Primary STL Download Card with #4B00F2 */}
                     <button
                       onClick={() => onExportSTL(true)}
-                      className="w-full p-4 rounded-2xl text-left border transition-all active:scale-[0.98] flex items-center justify-between shadow-sm bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500/40 shadow-emerald-600/20"
+                      className="w-full p-4 rounded-2xl text-left border border-transparent transition-all active:scale-[0.98] flex items-center justify-between bg-[#4B00F2] hover:bg-[#3D00C6] text-white shadow-md shadow-[#4B00F2]/20 cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-xl bg-white/15 text-white">
-                          <Download className="w-5 h-5" />
+                        <div className="p-3 rounded-xl bg-white/20 text-white">
+                          <Download className="w-5 h-5 text-white" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-sm block">
                               {isPurchased ? 'Download Licensed STL' : 'Download Free STL (Recommended)'}
                             </span>
-                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/20 text-white font-bold uppercase">
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/25 text-white font-bold uppercase">
                               {isPurchased ? 'Licensed' : 'FREE'}
                             </span>
                           </div>
-                          <span className="text-[11px] block mt-0.5 text-emerald-100">
+                          <span className="text-[11px] block mt-0.5 text-white/90">
                             Standard compact watertight file for Bambu, Cura, Prusa, OrcaSlicer
                           </span>
                         </div>
                       </div>
-                      <ChevronRight className="w-4 h-4 opacity-75 shrink-0" />
+                      <ChevronRight className="w-4 h-4 opacity-80 shrink-0" />
                     </button>
 
                     {/* Dual-Color / Multi-Part STLs Card */}
@@ -1173,7 +1222,7 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                   <div className={`p-4 rounded-2xl border space-y-2.5 ${isLight ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-950 border-zinc-800'}`}>
                     <div className="flex items-center justify-between border-b pb-2">
                       <div className="flex items-center gap-1.5 text-xs font-bold">
-                        <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <ShieldCheck className="w-4 h-4 text-[#4B00F2]" />
                         <span>Watertight 2-Manifold Mesh</span>
                       </div>
                       <span className="text-[11px] font-mono font-semibold">
@@ -1207,21 +1256,22 @@ export const ControlDock: React.FC<ControlDockProps> = ({
         </div>
       </div>
 
-      {/* Persistent Mobile Bottom Navigation Bar */}
+      {/* Right-aligned Vertical Compact Navigation Ribbon */}
       <nav
-        className={`fixed bottom-0 left-0 right-0 z-30 pb-safe transition-colors duration-200 border-t ${
+        aria-label="3D Studio Navigation Ribbon"
+        className={`fixed right-1.5 sm:right-3 top-1/2 -translate-y-1/2 z-30 p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border shadow-xl transition-all duration-200 backdrop-blur-xl ${
           isLight
-            ? 'bg-white/95 border-zinc-200 text-zinc-900 shadow-lg'
-            : 'bg-zinc-950/95 border-zinc-850 text-zinc-100 shadow-2xl'
-        } backdrop-blur-xl`}
+            ? 'bg-white/95 border-zinc-200/90 text-zinc-900 shadow-zinc-400/25'
+            : 'bg-zinc-950/95 border-zinc-800/90 text-zinc-100 shadow-black'
+        }`}
       >
-        <div className="max-w-lg mx-auto px-2 flex items-center justify-around h-16 sm:h-14">
+        <div className="flex flex-col items-center gap-0.5 sm:gap-1">
           {[
             { id: 'text' as ActiveSheetTab, label: 'Text', icon: Type },
             { id: 'base' as ActiveSheetTab, label: 'Base', icon: Box },
             { id: 'holes' as ActiveSheetTab, label: 'Holes', icon: CircleDot },
             { id: 'style' as ActiveSheetTab, label: 'Style', icon: Palette },
-            { id: 'export' as ActiveSheetTab, label: 'Export', icon: Download, isCTA: true },
+            { id: 'export' as ActiveSheetTab, label: !isUnlocked ? 'Add to Basket' : 'Export', icon: Download, isCTA: true },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1231,20 +1281,23 @@ export const ControlDock: React.FC<ControlDockProps> = ({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => onSelectTab(isActive ? null : tab.id)}
-                  aria-label={!isUnlocked ? "Add to Basket" : "Export STL"}
-                  className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all active:scale-95 min-h-[48px] min-w-[56px] ${
-                    isActive
-                      ? !isUnlocked
-                        ? 'bg-amber-600 text-white shadow-md'
-                        : 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                      : !isUnlocked
-                      ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-amber-950 dark:hover:bg-amber-900 dark:text-amber-200'
-                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-800/80'
-                  }`}
+                  onClick={() => {
+                    if (!isUnlocked && onPurchase) {
+                      onPurchase();
+                    } else {
+                      onSelectTab(isActive ? null : tab.id);
+                    }
+                  }}
+                  aria-label={!isUnlocked ? "Add to Basket" : "Download Free STL"}
+                  title={!isUnlocked ? `Add to Basket ($${(price > 0 ? price : 3.99).toFixed(2)})` : "Download Free STL"}
+                  className={`flex flex-col items-center justify-center p-0.5 sm:p-1 rounded-lg sm:rounded-xl transition-all active:scale-95 w-9 sm:w-11 h-9 sm:h-11 text-white shadow-md cursor-pointer ${
+                    !isUnlocked
+                      ? 'bg-[#F26C65] hover:bg-[#D9554E]'
+                      : 'bg-[#4B00F2] hover:bg-[#3D00C6]'
+                  } ${isActive ? 'ring-2 ring-offset-1 ' + (isLight ? 'ring-zinc-950 ring-offset-white' : 'ring-white ring-offset-zinc-950') : ''}`}
                 >
-                  <CTAIcon className="w-4 h-4 mb-0.5" />
-                  <span className="text-[10px] font-bold tracking-tight">
+                  <CTAIcon className="w-3.5 h-3.5 mb-0.5 text-white" />
+                  <span className="text-[6.5px] sm:text-[7.5px] font-bold tracking-tight text-white leading-tight text-center">
                     {!isUnlocked ? 'Basket' : 'Free STL'}
                   </span>
                 </button>
@@ -1256,24 +1309,19 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                 key={tab.id}
                 onClick={() => onSelectTab(isActive ? null : tab.id)}
                 aria-label={tab.label}
-                className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all active:scale-95 min-h-[48px] min-w-[56px] ${
+                title={tab.label}
+                className={`relative flex flex-col items-center justify-center p-0.5 sm:p-1 rounded-lg sm:rounded-xl transition-all active:scale-95 w-9 sm:w-11 h-9 sm:h-11 cursor-pointer ${
                   isActive
                     ? isLight
-                      ? 'text-zinc-950 font-bold'
-                      : 'text-white font-bold'
+                      ? 'bg-zinc-950 text-white font-bold shadow-md shadow-zinc-900/25 ring-1 ring-zinc-800'
+                      : 'bg-white text-zinc-950 font-bold shadow-md shadow-white/20 ring-1 ring-zinc-200'
                     : isLight
-                    ? 'text-zinc-500 hover:text-zinc-900'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
                 }`}
               >
-                <div className={`p-1 rounded-lg transition-colors ${
-                  isActive
-                    ? isLight ? 'bg-zinc-200/80' : 'bg-zinc-800/80'
-                    : 'bg-transparent'
-                }`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-medium tracking-tight mt-0.5">{tab.label}</span>
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-0.5" />
+                <span className="text-[7px] sm:text-[8px] font-semibold tracking-tight leading-tight">{tab.label}</span>
               </button>
             );
           })}

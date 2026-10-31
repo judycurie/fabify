@@ -102,7 +102,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
         {/* Instant Digital Delivery Banner */}
         <div className={`px-4 py-2.5 border-b text-xs flex items-center gap-2 ${isLight ? 'bg-zinc-100/70 border-zinc-200' : 'bg-zinc-900/60 border-zinc-800'}`}>
-          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <ShieldCheck className="w-4 h-4 text-[#F26C65] shrink-0" />
           <span className="text-zinc-600 dark:text-zinc-400">
             Instant .STL download delivery right after confirmation.
           </span>
@@ -117,16 +117,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
               <h3 className="font-semibold text-base">Your digital queue is empty</h3>
               <p className="text-xs text-zinc-500 max-w-xs">
-                Configure custom tags, desk organizers, or explore our free and premium templates in the catalog.
+                Configure custom tags, desk organizers, or explore our free and premium templates in the configurators.
               </p>
               <button
                 type="button"
                 onClick={onClose}
-                className={`mt-2 py-2.5 px-5 rounded-xl font-bold text-xs ${
-                  isLight ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'
-                }`}
+                className="mt-2 py-2.5 px-5 rounded-xl font-bold text-xs bg-[#4B00F2] hover:bg-[#3D00C6] text-white shadow-sm shadow-[#4B00F2]/25 transition-all"
               >
-                Browse Catalog
+                Browse Configurators
               </button>
             </div>
           ) : (
@@ -137,7 +135,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <div 
                   key={item.id}
                   className={`p-3.5 rounded-2xl border transition-all ${
-                    isLight ? 'bg-zinc-50/80 border-zinc-200' : 'bg-zinc-900/50 border-zinc-800'
+                    isCommercial
+                      ? isLight ? 'bg-[#F26C65]/5 border-[#F26C65]/30' : 'bg-[#F26C65]/10 border-[#F26C65]/30'
+                      : isLight ? 'bg-zinc-50/80 border-zinc-200' : 'bg-zinc-900/50 border-zinc-800'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -199,16 +199,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <button
                       type="button"
                       onClick={() => onToggleLicense(item.id)}
-                      className={`py-1 px-2 rounded-lg border text-[11px] font-semibold transition-all ${
+                      className={`py-1 px-2.5 rounded-lg border text-[11px] font-semibold transition-all ${
                         isCommercial
-                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                          : isLight ? 'border-zinc-300 text-zinc-700 bg-white' : 'border-zinc-700 text-zinc-300 bg-zinc-900'
+                          ? 'border-[#F26C65] bg-[#F26C65]/15 text-[#F26C65] font-bold shadow-sm'
+                          : isLight ? 'border-zinc-300 text-zinc-700 bg-white hover:border-[#F26C65]/60' : 'border-zinc-700 text-zinc-300 bg-zinc-900 hover:border-[#F26C65]/60'
                       }`}
                     >
-                      {isCommercial ? '✓ Commercial License' : 'Personal License (+Commercial $4)'}
+                      {isCommercial ? '✓ Commercial License ($4)' : 'Personal License (+Commercial $4)'}
                     </button>
 
-                    <span className="font-bold font-mono text-sm">
+                    <span className={`font-bold font-mono text-sm ${item.totalPrice > 0 ? 'text-[#F26C65]' : 'text-[#4B00F2]'}`}>
                       {item.totalPrice === 0 ? 'FREE' : `$${item.totalPrice.toFixed(2)}`}
                     </span>
                   </div>
@@ -233,8 +233,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     placeholder="Promo code (e.g. PRO3D)"
                     className={`w-full pl-9 pr-3 py-2 text-xs rounded-xl border font-mono uppercase focus:outline-none focus:ring-1 ${
                       isLight
-                        ? 'bg-white border-zinc-300 focus:border-zinc-900 text-zinc-900'
-                        : 'bg-zinc-950 border-zinc-700 focus:border-white text-zinc-100'
+                        ? 'bg-white border-zinc-300 focus:border-[#F26C65] text-zinc-900'
+                        : 'bg-zinc-950 border-zinc-700 focus:border-[#F26C65] text-zinc-100'
                     }`}
                   />
                 </div>
@@ -242,8 +242,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   type="submit"
                   className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-colors ${
                     isLight
-                      ? 'border-zinc-300 hover:border-zinc-900 bg-white text-zinc-900'
-                      : 'border-zinc-700 hover:border-white bg-zinc-950 text-white'
+                      ? 'border-zinc-300 hover:border-[#F26C65] hover:text-[#F26C65] bg-white text-zinc-900'
+                      : 'border-zinc-700 hover:border-[#F26C65] hover:text-[#F26C65] bg-zinc-950 text-white'
                   }`}
                 >
                   Apply
@@ -251,7 +251,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
 
               {appliedPromo && (
-                <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 pt-1">
+                <div className="flex items-center justify-between text-xs text-[#F26C65] pt-1 font-semibold">
                   <span className="flex items-center gap-1">
                     <Check className="w-3.5 h-3.5" />
                     Code <strong>{appliedPromo}</strong> applied
@@ -281,14 +281,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <span className="font-mono font-medium">${subtotal.toFixed(2)}</span>
               </div>
               {promoDiscount > 0 && (
-                <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                <div className="flex justify-between text-[#F26C65] font-semibold">
                   <span>Discount ({appliedPromo})</span>
                   <span className="font-mono font-medium">-${promoDiscount.toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between font-bold text-sm pt-2 border-t border-zinc-200 dark:border-zinc-800">
                 <span>Total Due</span>
-                <span className="font-mono text-base">
+                <span className={`font-mono text-base font-black ${grandTotal > 0 ? 'text-[#F26C65]' : 'text-[#4B00F2]'}`}>
                   {grandTotal === 0 ? 'FREE' : `$${grandTotal.toFixed(2)}`}
                 </span>
               </div>
@@ -298,14 +298,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             <button
               type="button"
               onClick={onProceedToCheckout}
-              className={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
-                isLight
-                  ? 'bg-zinc-900 hover:bg-zinc-800 text-white'
-                  : 'bg-white hover:bg-zinc-100 text-zinc-950'
+              className={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.98] text-white cursor-pointer ${
+                grandTotal === 0
+                  ? 'bg-[#4B00F2] hover:bg-[#3D00C6] shadow-lg shadow-[#4B00F2]/25'
+                  : 'bg-[#F26C65] hover:bg-[#D9554E] shadow-lg shadow-[#F26C65]/25'
               }`}
             >
               <span>{grandTotal === 0 ? 'Get Free Downloads' : 'Proceed to Checkout'}</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 text-white" />
             </button>
           </div>
         )}

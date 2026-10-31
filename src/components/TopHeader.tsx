@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '../types/auth';
 
-export type NavPage = 'studio' | 'catalog' | 'downloads';
+export type NavPage = 'studio' | 'catalog' | 'configurators' | 'downloads';
 export type StudioConfigurator = 'tag' | 'box';
 
 interface TopHeaderProps {
@@ -177,8 +177,13 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             3D
           </div>
           <div className="flex flex-col justify-center">
-            <span className={`text-sm font-bold tracking-tight whitespace-nowrap ${isLight ? 'text-zinc-950' : 'text-zinc-100'}`}>
-              Fabify CAD
+            <div className="flex items-center gap-1.5">
+              <span className={`text-sm font-bold tracking-tight whitespace-nowrap ${isLight ? 'text-zinc-950' : 'text-zinc-100'}`}>
+                Fabify CAD
+              </span>
+            </div>
+            <span className="text-[10px] text-zinc-500 font-medium tracking-tight whitespace-nowrap hidden sm:block">
+              Powered by Fab Foundation Poland (FFP)
             </span>
           </div>
         </div>
@@ -187,7 +192,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         <nav className="hidden md:flex items-center gap-1">
           {[
             { id: 'studio' as NavPage, label: '3D Studio' },
-            { id: 'catalog' as NavPage, label: 'Catalog' },
+            { id: 'catalog' as NavPage, label: 'Configurators' },
             { id: 'downloads' as NavPage, label: 'My Downloads' },
           ].map((link) => {
             const isActive = currentPage === link.id;
@@ -195,8 +200,14 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               <button
                 key={link.id}
                 type="button"
-                onClick={() => onNavigate(link.id)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                onClick={() => {
+                  if (link.id === 'downloads' && !currentUser) {
+                    onOpenAuth();
+                    return;
+                  }
+                  onNavigate(link.id);
+                }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
                   isActive
                     ? isLight
                       ? 'bg-zinc-100 text-zinc-950 font-bold'
@@ -206,15 +217,15 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                     : 'text-zinc-400 hover:text-white hover:bg-zinc-900/50'
                 }`}
               >
-                {link.label}
+                <span>{link.label}</span>
               </button>
             );
           })}
         </nav>
       </div>
 
-      {/* Center Zone: 3D Studio Suite Bar (Grouping Tags & Plates, Desk Organizers, and Templates) */}
-      {currentPage === 'studio' && (
+      {/* Center 3D Studio subbar removed - opened via Customize on templates */}
+      {false && (
         <div className="hidden sm:flex items-center gap-1.5 p-1 rounded-2xl border shadow-sm transition-all bg-zinc-100/90 dark:bg-zinc-900/90 border-zinc-200/90 dark:border-zinc-800">
           {/* Explicit 3D Studio Suite Label (No green dot) */}
           <div className="flex items-center px-2.5 py-1 text-[11px] font-bold tracking-wider uppercase text-zinc-500 dark:text-zinc-400 border-r border-zinc-200 dark:border-zinc-800 select-none">
@@ -306,9 +317,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                   <div className="space-y-2">
                     {/* Free Community Tags (ALL TAGS ARE FREE) */}
                     <div>
-                      <div className="px-2 py-1 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                      <div className="px-2 py-1 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-[#4B00F2] dark:text-[#855BFF]">
                         <span>Free Tags & Keychains</span>
-                        <span className="px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[9px] font-mono">
+                        <span className="px-1.5 py-0.2 rounded-md bg-[#4B00F2]/10 text-[#4B00F2] dark:text-[#855BFF] text-[9px] font-mono border border-[#4B00F2]/20 font-bold">
                           ALL FREE
                         </span>
                       </div>
@@ -322,8 +333,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                             }`}
                           >
                             <span className="font-semibold text-xs">{p.name}</span>
-                            <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                              FREE
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg bg-[#4B00F2]/10 text-[#4B00F2] dark:text-[#855BFF] border border-[#4B00F2]/30 flex items-center gap-1">
+                              <Download className="w-2.5 h-2.5" />
+                              FREE STL
                             </span>
                           </button>
                         ))}
@@ -332,12 +344,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 
                     {/* Dedicated Plates Category */}
                     <div className="pt-1">
-                      <div className="px-2 py-1 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                      <div className="px-2 py-1 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-[#F26C65] dark:text-[#FF8D87]">
                         <span className="flex items-center gap-1">
                           <TagIcon className="w-3 h-3" />
                           Plates & Signs
                         </span>
-                        <span className="px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[9px] font-mono">
+                        <span className="px-1.5 py-0.2 rounded-md bg-[#F26C65]/10 text-[#F26C65] dark:text-[#FF8D87] text-[9px] font-mono border border-[#F26C65]/20 font-bold">
                           LARGE FORMAT
                         </span>
                       </div>
@@ -347,14 +359,26 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                             key={p.id}
                             onClick={() => handleApplyTagPreset(p)}
                             className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-colors flex items-center justify-between ${
-                              isLight ? 'hover:bg-amber-50/60 text-zinc-900' : 'hover:bg-zinc-800 text-zinc-200'
+                              isLight ? 'hover:bg-[#F26C65]/5 text-zinc-900' : 'hover:bg-zinc-800 text-zinc-200'
                             }`}
                           >
                             <span className="font-semibold text-xs">{p.name}</span>
-                            <span className={`text-[10px] font-mono font-bold ${
-                              p.isFree ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+                            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg flex items-center gap-1 ${
+                              p.isFree 
+                                ? 'bg-[#4B00F2]/10 text-[#4B00F2] dark:text-[#855BFF] border border-[#4B00F2]/30' 
+                                : 'bg-[#F26C65]/10 text-[#F26C65] dark:text-[#FF8D87] border border-[#F26C65]/30'
                             }`}>
-                              {p.isFree ? 'FREE' : `$${(p.digitalPrice || 3.50).toFixed(2)}`}
+                              {p.isFree ? (
+                                <>
+                                  <Download className="w-2.5 h-2.5" />
+                                  <span>FREE STL</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Lock className="w-2.5 h-2.5" />
+                                  <span>${(p.digitalPrice || 3.50).toFixed(2)}</span>
+                                </>
+                              )}
                             </span>
                           </button>
                         ))}
@@ -368,9 +392,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                   <div className="space-y-2">
                     {/* Free Boxes */}
                     <div>
-                      <div className="px-2 py-1 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                      <div className="px-2 py-1 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-[#4B00F2] dark:text-[#855BFF]">
                         <span>Free Community Boxes</span>
-                        <span className="px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[9px] font-mono">
+                        <span className="px-1.5 py-0.2 rounded-md bg-[#4B00F2]/10 text-[#4B00F2] dark:text-[#855BFF] text-[9px] font-mono border border-[#4B00F2]/20 font-bold">
                           FREE STL
                         </span>
                       </div>
@@ -384,8 +408,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                             }`}
                           >
                             <span className="font-semibold text-xs">{p.name}</span>
-                            <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                              FREE
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg bg-[#4B00F2]/10 text-[#4B00F2] dark:text-[#855BFF] border border-[#4B00F2]/30 flex items-center gap-1">
+                              <Download className="w-2.5 h-2.5" />
+                              FREE STL
                             </span>
                           </button>
                         ))}
@@ -394,12 +419,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 
                     {/* Paid Commercial Boxes */}
                     <div className="pt-1">
-                      <div className="px-2 py-1 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                      <div className="px-2 py-1 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-[#F26C65] dark:text-[#FF8D87]">
                         <span className="flex items-center gap-1">
-                          <Lock className="w-3 h-3" />
+                          <Lock className="w-3 h-3 text-[#F26C65]" />
                           Commercial CAD Licenses
                         </span>
-                        <span className="px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[9px] font-mono">
+                        <span className="px-1.5 py-0.2 rounded-md bg-[#F26C65]/10 text-[#F26C65] dark:text-[#FF8D87] text-[9px] font-mono border border-[#F26C65]/20 font-bold">
                           PAID
                         </span>
                       </div>
@@ -409,11 +434,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                             key={p.id}
                             onClick={() => handleApplyBoxPreset(p)}
                             className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-colors flex items-center justify-between ${
-                              isLight ? 'hover:bg-amber-50/60 text-zinc-900' : 'hover:bg-zinc-800 text-zinc-200'
+                              isLight ? 'hover:bg-[#F26C65]/5 text-zinc-900' : 'hover:bg-zinc-800 text-zinc-200'
                             }`}
                           >
                             <span className="font-semibold text-xs">{p.name}</span>
-                            <span className="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400">
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg bg-[#F26C65]/10 text-[#F26C65] dark:text-[#FF8D87] border border-[#F26C65]/30 flex items-center gap-1">
+                              <Lock className="w-2.5 h-2.5" />
                               ${p.digitalPrice.toFixed(2)}
                             </span>
                           </button>
@@ -456,36 +482,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           </button>
         )}
 
-        {/* 1-CLICK FREE STL DOWNLOAD (IN THE COLORS OF THE FREE STL) / ADD TO BASKET FOR PAID */}
-        {currentPage === 'studio' && (
-          isUnlocked ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (activeConfigurator === 'tag') {
-                  onExportTagSTL(true);
-                } else {
-                  onExportBoxSTL(true);
-                }
-              }}
-              className="hidden sm:flex items-center gap-1.5 font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-md transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/25 border border-emerald-500/40 cursor-pointer"
-              title="Download direct slicer-ready watertight STL"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>{activeTemplate.isFree ? 'Download Free STL' : 'Download STL (Licensed)'}</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onPurchaseTemplate}
-              className="hidden sm:flex items-center gap-1.5 font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-md transition-all active:scale-95 bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
-            >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span>Add to Basket (${activeTemplate.price.toFixed(2)})</span>
-            </button>
-          )
-        )}
-
         {/* Digital Downloads Basket Button */}
         <button
           type="button"
@@ -504,9 +500,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           <ShoppingBag className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
           <span className="hidden sm:inline">Basket</span>
           {cartItemCount > 0 && (
-            <span className={`px-1.5 py-0.2 rounded-full font-mono text-[10px] font-bold ${
-              isLight ? 'bg-white text-zinc-900' : 'bg-zinc-900 text-white'
-            }`}>
+            <span className="px-1.5 py-0.2 rounded-full font-mono text-[10px] font-bold bg-[#F26C65] text-white shadow-sm">
               {cartItemCount}
             </span>
           )}
@@ -526,7 +520,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 }`}
                 title={`Logged in as ${currentUser.email}`}
               >
-                <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-[10px]">
+                <div className="w-5 h-5 rounded-full bg-[#4B00F2] text-white flex items-center justify-center font-bold text-[10px]">
                   {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'M'}
                 </div>
                 <span className="text-xs font-semibold hidden md:inline max-w-[90px] truncate">
@@ -544,8 +538,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                   <div className="pb-2.5 mb-2.5 border-b border-zinc-100 dark:border-zinc-800">
                     <div className="font-bold text-xs truncate">{currentUser.name || 'Maker'}</div>
                     <div className="text-[11px] text-zinc-400 truncate">{currentUser.email}</div>
-                    <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                      <Check className="w-3 h-3" />
+                    <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-mono font-bold text-[#4B00F2]">
+                      <Check className="w-3 h-3 text-[#4B00F2]" />
                       <span>Free Downloads Unlocked</span>
                     </div>
                   </div>
@@ -569,14 +563,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             <button
               type="button"
               onClick={onOpenAuth}
-              className={`flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-1.5 text-xs font-bold rounded-xl border transition-all ${
-                isLight
-                  ? 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900 border-zinc-300'
-                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border-zinc-700'
-              }`}
+              className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 text-xs font-bold rounded-xl transition-all shadow-sm bg-[#4B00F2] hover:bg-[#3D00C6] text-white shadow-[#4B00F2]/20 cursor-pointer active:scale-95"
               title="Log in to download free STLs"
             >
-              <User className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-500" />
+              <User className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-white" />
               <span className="hidden sm:inline">Sign In</span>
             </button>
           )}
@@ -650,84 +640,29 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                       setShowMobileMenu(false);
                       onOpenAuth();
                     }}
-                    className="w-full py-2.5 px-3 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold text-xs flex items-center justify-center gap-2"
+                    className="w-full py-2.5 px-3 rounded-xl bg-[#4B00F2] hover:bg-[#3D00C6] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-[#4B00F2]/20"
                   >
-                    <User className="w-3.5 h-3.5 text-emerald-400" />
+                    <User className="w-3.5 h-3.5 text-white" />
                     <span>Sign In for Free Downloads</span>
                   </button>
                 )}
               </div>
 
-              {/* 3D Studio Tools in Mobile Drawer */}
-              <div className="space-y-2 pb-3 border-b border-zinc-200 dark:border-zinc-800">
-                <div className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400">
-                  <span>3D Studio Tools</span>
-                </div>
-                {/* Segmented Toggle in Mobile Drawer */}
-                <div className="flex items-center p-0.5 rounded-xl bg-zinc-100 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-700/60">
-                  <button
-                    onClick={() => {
-                      onChangeConfigurator('tag');
-                      onNavigate('studio');
-                      setShowMobileMenu(false);
-                    }}
-                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                      activeConfigurator === 'tag' && currentPage === 'studio'
-                        ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
-                        : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <TagIcon className="w-3.5 h-3.5 opacity-70" />
-                    <span>Tags & Plates</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      onChangeConfigurator('box');
-                      onNavigate('studio');
-                      setShowMobileMenu(false);
-                    }}
-                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                      activeConfigurator === 'box' && currentPage === 'studio'
-                        ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
-                        : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <BoxIcon className="w-3.5 h-3.5 opacity-70" />
-                    <span>Desk Organizers</span>
-                  </button>
-                </div>
-
-                {/* Templates trigger in Mobile Drawer */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    setShowMobileTemplates(true);
-                  }}
-                  className={`w-full px-3 py-2 rounded-xl text-xs font-bold text-left flex items-center justify-between border transition-all ${
-                    isLight 
-                      ? 'bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-800' 
-                      : 'bg-zinc-900 hover:bg-zinc-850 border-zinc-800 text-zinc-200'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 opacity-70" />
-                    <span>Preset Templates</span>
-                  </span>
-                  <span className="text-[10px] font-mono text-zinc-400 font-normal">View All →</span>
-                </button>
-              </div>
-
               <div className="space-y-1">
                 {[
                   { id: 'studio' as NavPage, label: '3D Studio' },
-                  { id: 'catalog' as NavPage, label: 'Catalog' },
+                  { id: 'catalog' as NavPage, label: 'Configurators' },
                   { id: 'downloads' as NavPage, label: 'My Downloads' },
                 ].map((link) => (
                   <button
                     key={link.id}
                     type="button"
                     onClick={() => {
+                      if (link.id === 'downloads' && !currentUser) {
+                        setShowMobileMenu(false);
+                        onOpenAuth();
+                        return;
+                      }
                       onNavigate(link.id);
                       setShowMobileMenu(false);
                     }}
@@ -861,9 +796,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               {/* Tags & Keychains */}
               {(mobileTemplateFilter === 'all' || mobileTemplateFilter === 'tags') && (
                 <div>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-2 flex items-center justify-between">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#4B00F2] dark:text-[#855BFF] mb-2 flex items-center justify-between">
                     <span>Free Community Tags & Keychains</span>
-                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950">ALL FREE</span>
+                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded-md bg-[#4B00F2]/10 border border-[#4B00F2]/20 font-bold">ALL FREE</span>
                   </div>
                   <div className="grid grid-cols-1 gap-2">
                     {freeTags.map((p) => (
@@ -878,8 +813,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                           <div className="font-bold text-xs">{p.name}</div>
                           <div className="text-[10px] text-zinc-400 mt-0.5">{p.description}</div>
                         </div>
-                        <span className="font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800">
-                          FREE
+                        <span className="font-mono text-[10px] font-bold text-[#4B00F2] dark:text-[#855BFF] px-2 py-0.5 rounded-lg bg-[#4B00F2]/10 border border-[#4B00F2]/30 flex items-center gap-1">
+                          <Download className="w-2.5 h-2.5" />
+                          FREE STL
                         </span>
                       </button>
                     ))}
@@ -890,9 +826,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               {/* Plates & Signs */}
               {(mobileTemplateFilter === 'all' || mobileTemplateFilter === 'plates') && (
                 <div>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-2 flex items-center justify-between">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#F26C65] dark:text-[#FF8D87] mb-2 flex items-center justify-between">
                     <span>Large Format Plates & Signs</span>
-                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950">ARCHITECTURAL</span>
+                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded-md bg-[#F26C65]/10 border border-[#F26C65]/20 font-bold">ARCHITECTURAL</span>
                   </div>
                   <div className="grid grid-cols-1 gap-2">
                     {plates.map((p) => (
@@ -900,19 +836,29 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                         key={p.id}
                         onClick={() => handleApplyTagPreset(p)}
                         className={`p-3 rounded-2xl text-left border transition-all flex items-center justify-between ${
-                          isLight ? 'bg-amber-50/40 border-amber-200 hover:bg-amber-50' : 'bg-zinc-800/60 border-zinc-700/60 hover:bg-zinc-800'
+                          isLight ? 'bg-[#F26C65]/5 border-zinc-200 hover:bg-[#F26C65]/10' : 'bg-zinc-800/60 border-zinc-700/60 hover:bg-zinc-800'
                         }`}
                       >
                         <div>
                           <div className="font-bold text-xs">{p.name}</div>
                           <div className="text-[10px] text-zinc-400 mt-0.5">{p.description}</div>
                         </div>
-                        <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded ${
+                        <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1 ${
                           p.isFree 
-                            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800' 
-                            : 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800'
+                            ? 'text-[#4B00F2] dark:text-[#855BFF] bg-[#4B00F2]/10 border border-[#4B00F2]/30' 
+                            : 'text-[#F26C65] dark:text-[#FF8D87] bg-[#F26C65]/10 border border-[#F26C65]/30'
                         }`}>
-                          {p.isFree ? 'FREE' : `$${(p.digitalPrice || 3.50).toFixed(2)}`}
+                          {p.isFree ? (
+                            <>
+                              <Download className="w-2.5 h-2.5" />
+                              FREE STL
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-2.5 h-2.5" />
+                              ${(p.digitalPrice || 3.50).toFixed(2)}
+                            </>
+                          )}
                         </span>
                       </button>
                     ))}
@@ -925,7 +871,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 <div>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-2 flex items-center justify-between">
                     <span>Desk Organizers & Trays</span>
-                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800">PARAMETRIC</span>
+                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 font-bold">PARAMETRIC</span>
                   </div>
                   <div className="grid grid-cols-1 gap-2">
                     {BOX_PRESETS.map((p) => (
@@ -940,12 +886,22 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                           <div className="font-bold text-xs">{p.name}</div>
                           <div className="text-[10px] text-zinc-400 mt-0.5">{p.description}</div>
                         </div>
-                        <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded ${
+                        <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1 ${
                           p.isFree 
-                            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800' 
-                            : 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800'
+                            ? 'text-[#4B00F2] dark:text-[#855BFF] bg-[#4B00F2]/10 border border-[#4B00F2]/30' 
+                            : 'text-[#F26C65] dark:text-[#FF8D87] bg-[#F26C65]/10 border border-[#F26C65]/30'
                         }`}>
-                          {p.isFree ? 'FREE' : `$${p.digitalPrice.toFixed(2)}`}
+                          {p.isFree ? (
+                            <>
+                              <Download className="w-2.5 h-2.5" />
+                              FREE STL
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-2.5 h-2.5" />
+                              ${p.digitalPrice.toFixed(2)}
+                            </>
+                          )}
                         </span>
                       </button>
                     ))}

@@ -68,7 +68,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <div className="w-10 h-10 rounded-2xl bg-[#4B00F2]/10 border border-[#4B00F2]/25 flex items-center justify-center text-[#4B00F2]">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
@@ -99,15 +99,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           isLight ? 'bg-zinc-50 border-zinc-200 text-zinc-700' : 'bg-zinc-950 border-zinc-800 text-zinc-300'
         }`}>
           <div className="flex items-center gap-2">
-            <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <Check className="w-3.5 h-3.5 text-[#4B00F2] shrink-0" />
             <span>Instant 1-click binary STL downloads</span>
           </div>
           <div className="flex items-center gap-2">
-            <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <Check className="w-3.5 h-3.5 text-[#4B00F2] shrink-0" />
             <span>Unlimited free community tags and desk trays</span>
           </div>
           <div className="flex items-center gap-2">
-            <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <Check className="w-3.5 h-3.5 text-[#4B00F2] shrink-0" />
             <span>Saved customized parametric parameters</span>
           </div>
         </div>
@@ -181,8 +181,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onChange={(e) => setEmail(e.target.value)}
                   className={`w-full h-11 px-3 rounded-xl text-xs border focus:outline-none transition-colors ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 text-zinc-900 focus:border-zinc-900'
-                      : 'bg-zinc-950 border-zinc-700 text-white focus:border-white'
+                      ? 'bg-zinc-50 border-zinc-300 text-zinc-900 focus:border-[#4B00F2] focus:ring-1 focus:ring-[#4B00F2]'
+                      : 'bg-zinc-950 border-zinc-700 text-white focus:border-[#4B00F2] focus:ring-1 focus:ring-[#4B00F2]'
                   }`}
                 />
               </div>
@@ -198,8 +198,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onChange={(e) => setName(e.target.value)}
                   className={`w-full h-11 px-3 rounded-xl text-xs border focus:outline-none transition-colors ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 text-zinc-900 focus:border-zinc-900'
-                      : 'bg-zinc-950 border-zinc-700 text-white focus:border-white'
+                      ? 'bg-zinc-50 border-zinc-300 text-zinc-900 focus:border-[#4B00F2] focus:ring-1 focus:ring-[#4B00F2]'
+                      : 'bg-zinc-950 border-zinc-700 text-white focus:border-[#4B00F2] focus:ring-1 focus:ring-[#4B00F2]'
                   }`}
                 />
               </div>
@@ -207,11 +207,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="submit"
                 disabled={isSubmitting || !email.trim()}
-                className={`w-full h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
-                  isLight
-                    ? 'bg-zinc-900 hover:bg-black text-white'
-                    : 'bg-white hover:bg-zinc-200 text-zinc-950'
-                }`}
+                className="w-full h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] bg-[#4B00F2] hover:bg-[#3D00C6] text-white shadow-lg shadow-[#4B00F2]/25 cursor-pointer disabled:opacity-50"
               >
                 <span>{isSubmitting ? 'Signing in...' : 'Sign In & Download Free STL'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />

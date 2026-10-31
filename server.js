@@ -57,6 +57,123 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Stripe Checkout Session Creation Endpoint (Fab Foundation Poland)
+  if (req.method === 'POST' && req.url === '/api/create-checkout-session') {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+    req.on('end', async () => {
+      res.setHeader('Content-Type', 'application/json');
+      try {
+        const payload = JSON.parse(body || '{}');
+        const items = payload.items || [];
+        const stripeKey = process.env.STRIPE_SECRET_KEY;
+
+        if (!stripeKey || stripeKey.startsWith('mk_')) {
+          // Return simulated session response when key is not set or is an identifier (mk_...)
+          res.writeHead(200);
+          res.end(
+            JSON.stringify({
+              success: true,
+              isSimulated: true,
+              sessionId: `cs_test_fab_${Date.now()}`,
+              message: stripeKey?.startsWith('mk_')
+                ? 'Stripe Note: Provided key starts with mk_ (Key ID). In Stripe Dashboard, please copy the Secret Key (starts with sk_live_ or rk_live_).'
+                : 'Stripe Sandbox: Set STRIPE_SECRET_KEY in .env or Cloud Run to enable live Stripe redirects.',
+            })
+          );
+          return;
+        }
+
+        // Dynamically import stripe
+        const { default: Stripe } = await import('stripe');
+        const stripe = new Stripe(stripeKey);
+
+        const line_items = items.map((item) => ({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `${item.templateName} (${item.licenseType.toUpperCase()} CAD License)`,
+              description: `Fab Foundation Poland · Parametric Code: ${item.paramCode}`,
+            },
+            unit_amount: Math.round((item.unitPrice || 3.50) * 100),
+          },
+          quantity: item.quantity || 1,
+        }));
+
+        const appUrl = process.env.APP_URL || `http://${req.headers.host || 'localhost:3000'}`;
+
+        const session = await stripe.checkout.sessions.create({
+          customer_email: payload.customerEmail || undefined,
+          line_items: line_items.length > 0 ? line_items : undefined,
+          mode: 'payment',
+          success_url: `${appUrl}/?order_success=true&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${appUrl}/?canceled=true`,
+          metadata: {
+            organization: 'Fab Foundation Poland',
+            customerEmail: payload.customerEmail || '',
+            itemCount: String(items.length),
+          },
+        });
+
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true, url: session.url, sessionId: session.id }));
+      } catch (err) {
+        console.error('[Stripe Session Error]', err);
+        res.writeHead(500);
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // Verify Stripe Session directly without needing any webhook
+  if (req.method === 'GET' && req.url.startsWith('/api/verify-checkout-session')) {
+    const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost:3000'}`);
+    const sessionId = urlObj.searchParams.get('session_id');
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+
+    res.setHeader('Content-Type', 'application/json');
+    if (!sessionId) {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Missing session_id query parameter' }));
+      return;
+    }
+
+    if (!stripeKey || stripeKey.startsWith('mk_')) {
+      // In sandbox mode or key identifier
+      res.writeHead(200);
+      res.end(JSON.stringify({ paid: true, isSimulated: true, sessionId }));
+      return;
+    }
+
+    (async () => {
+      try {
+        const { default: Stripe } = await import('stripe');
+        const stripe = new Stripe(stripeKey);
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        const isPaid = session.payment_status === 'paid';
+        res.writeHead(200);
+        res.end(
+          JSON.stringify({
+            paid: isPaid,
+            customerEmail: session.customer_details?.email || session.customer_email,
+            customerName: session.customer_details?.name,
+            amountTotal: (session.amount_total || 0) / 100,
+            currency: session.currency,
+            sessionId: session.id,
+          })
+        );
+      } catch (err) {
+        console.error('[Stripe Verify Error]', err);
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    })();
+    return;
+  }
+
   // Sanitize path to prevent directory traversal
   const urlPath = req.url ? req.url.split('?')[0] : '/';
   const decodedPath = decodeURIComponent(urlPath);

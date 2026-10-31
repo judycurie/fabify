@@ -165,42 +165,76 @@ export async function generateBoxModel(
       if (textResult.shapes.length > 0) {
         const textExtrude: THREE.ExtrudeGeometryOptions = {
           depth: labelRelief,
-          bevelEnabled: true,
-          bevelSegments: 2,
+          bevelEnabled: false,
           steps: 1,
-          bevelSize: 0.1,
-          bevelThickness: 0.1,
         };
 
         const rawTextGeo = new THREE.ExtrudeGeometry(textResult.shapes, textExtrude);
         rawTextGeo.computeBoundingBox();
 
         const tb = rawTextGeo.boundingBox || new THREE.Box3();
-        const textW = tb.max.x - tb.min.x;
-        const textH = tb.max.y - tb.min.y;
+        const textW = Math.max(0.1, tb.max.x - tb.min.x);
+        const textH = Math.max(0.1, tb.max.y - tb.min.y);
 
-        // Position on front face: center X, front edge Y = -depth/2, Z = mid-height
-        const maxFitW = width - 2 * filletRadius - 10;
-        const scale = textW > maxFitW ? maxFitW / textW : 1.0;
+        // Define strict boundary of the flat front surface:
+        // Flat X boundary excludes corner fillets + safety margin:
+        const minFlatX = -width / 2 + filletRadius + 2.5;
+        const maxFlatX = width / 2 - filletRadius - 2.5;
+        const availFlatW = Math.max(10.0, maxFlatX - minFlatX);
 
-        rawTextGeo.scale(scale, scale, 1.0);
-        const actualW = textW * scale;
-        const actualH = textH * scale;
+        // Flat Z boundary excludes floor & top chamfer/stacking lip + safety margin:
+        const minZ = Math.max(1.5, floorThickness * 0.5);
+        const topLipMargin = hasStackingLip ? (stackingLipHeight || 3.0) : 0;
+        const maxZ = Math.max(minZ + 4.0, height - topLipMargin - edgeBevel - 2.5);
+        const availFlatH = Math.max(4.0, maxZ - minZ);
 
-        // Rotate so text is upright on front vertical wall:
-        // Text is in XY plane with normal in Z. Rotate 90 deg around X so normal points along -Y!
+        // Auto-scale text uniformly so it NEVER exceeds the front surface boundary:
+        const fitScaleX = textW > availFlatW ? availFlatW / textW : 1.0;
+        const fitScaleZ = textH > availFlatH ? availFlatH / textH : 1.0;
+        const uniformScale = Math.min(fitScaleX, fitScaleZ, 1.0);
+
+        rawTextGeo.scale(uniformScale, uniformScale, 1.0);
+        // Normalize origin so text begins at (0, 0, 0)
+        rawTextGeo.translate(-tb.min.x * uniformScale, -tb.min.y * uniformScale, 0);
+
+        const actualW = textW * uniformScale;
+        const actualH = textH * uniformScale;
+
+        // Rotate to stand upright on front wall (normal pointing along -Y towards viewer):
         rawTextGeo.rotateX(Math.PI / 2);
 
-        // Center on front wall
-        const zPos = Math.max(floorThickness + 2, Math.min(height - actualH - 4, height * 0.4));
-        const yPos = -depth / 2;
+        const pos = config.textPosition || 'front_center';
+        const vOffset = config.textVerticalOffset || 0;
 
-        rawTextGeo.translate(-actualW / 2, yPos, zPos);
-        rawTextGeo.computeVertexNormals();
+        // Calculate horizontal X placement within flat surface
+        let targetX = -actualW / 2;
+        if (pos === 'front_left') {
+          targetX = minFlatX + 1.0;
+        } else if (pos === 'front_right') {
+          targetX = maxFlatX - actualW - 1.0;
+        }
 
+        // Clamp X strictly within front surface flat region
+        const xPos = Math.max(minFlatX, Math.min(maxFlatX - actualW, targetX));
+
+        // Calculate vertical Z placement within front wall
+        const midZ = minZ + (availFlatH - actualH) / 2;
+        let targetZ = midZ + vOffset;
+        if (pos === 'front_top') {
+          targetZ = maxZ - actualH - 0.5 + vOffset;
+        } else if (pos === 'front_bottom') {
+          targetZ = minZ + 0.5 + vOffset;
+        }
+
+        // Clamp Z strictly so text never drops below floor or rises above top rim
+        const zPos = Math.max(minZ, Math.min(maxZ - actualH, targetZ));
+
+        // Front face is at y = -depth / 2
         if (labelStyle === 'embossed') {
-          // Text projects outward from front face
-          rawTextGeo.translate(0, -labelRelief + 0.1, 0);
+          // Embed 0.15mm into front wall for watertight manifold Boolean addition
+          const yPos = -depth / 2 + 0.15;
+          rawTextGeo.translate(xPos, yPos, zPos);
+          rawTextGeo.computeVertexNormals();
           textGeometry = rawTextGeo;
 
           const textMat = new THREE.MeshStandardMaterial({
@@ -211,7 +245,10 @@ export async function generateBoxModel(
           textMesh = new THREE.Mesh(textGeometry, textMat);
         } else {
           // Debossed: cut into front wall
-          rawTextGeo.translate(0, labelRelief * 0.5, 0);
+          const yPos = -depth / 2 + labelRelief + 0.05;
+          rawTextGeo.translate(xPos, yPos, zPos);
+          rawTextGeo.computeVertexNormals();
+
           const debossBrush = new Brush(rawTextGeo);
           debossBrush.updateMatrixWorld();
           currentBrush = evaluator.evaluate(currentBrush, debossBrush, SUBTRACTION);

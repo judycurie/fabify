@@ -1,6 +1,13 @@
 import { TagDimensions } from './tag';
 
-export type BoxStyle = 'open_tray' | 'divided_grid' | 'scoop_caddy' | 'stackable_bin';
+export type BoxTextPosition = 
+  | 'front_center' 
+  | 'front_top' 
+  | 'front_bottom' 
+  | 'front_left' 
+  | 'front_right' 
+  | 'back_wall' 
+  | 'inside_bottom';
 
 export interface BoxConfig {
   // Dimensions in Millimeters
@@ -24,12 +31,14 @@ export interface BoxConfig {
   hasStackingLip: boolean;   // Stepped top lip & bottom inset for secure vertical stacking
   stackingLipHeight: number; // 2mm to 6mm (default 3.0)
 
-  // Custom Front Label
+  // Custom Label & Text Position
   hasLabel: boolean;
   labelText: string;
   labelFontSize: number;     // 4mm to 16mm (default 8)
   labelStyle: 'embossed' | 'debossed';
   labelRelief: number;       // 0.6mm to 2.0mm (default 1.0)
+  textPosition: BoxTextPosition; // Placement position across organizer faces
+  textVerticalOffset: number;   // -15mm to +15mm fine vertical adjustment
 
   // Colors & Viewport
   primaryColor: string;

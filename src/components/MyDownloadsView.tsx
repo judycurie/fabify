@@ -4,6 +4,7 @@ import { AppTheme, TagConfig } from '../types/tag';
 import { BoxConfig } from '../types/box';
 import { getSavedOrders } from '../utils/orders';
 import { exportSTL } from '../utils/stlExporter';
+import { exportSTEP } from '../utils/stepExporter';
 import { generateBoxModel } from '../utils/boxGeometry';
 import { generateTagModel } from '../utils/tagGeometry';
 import { loadHelveticaFont } from '../utils/fontLoader';
@@ -18,17 +19,26 @@ import {
   ExternalLink,
   ShieldCheck,
   Tag as TagIcon,
-  Box as BoxIcon
+  Box as BoxIcon,
+  Lock,
+  LogIn,
+  UserCheck
 } from 'lucide-react';
+import { UserProfile } from '../types/auth';
+import { FoundationFootnote } from './FoundationFootnote';
 
 interface MyDownloadsViewProps {
   theme: AppTheme;
+  currentUser: UserProfile | null;
+  onOpenAuth: () => void;
   onOpenTagInStudio: (config: TagConfig) => void;
   onOpenBoxInStudio: (config: BoxConfig) => void;
 }
 
 export const MyDownloadsView: React.FC<MyDownloadsViewProps> = ({
   theme,
+  currentUser,
+  onOpenAuth,
   onOpenTagInStudio,
   onOpenBoxInStudio,
 }) => {
@@ -37,6 +47,53 @@ export const MyDownloadsView: React.FC<MyDownloadsViewProps> = ({
   const [downloadingItemId, setDownloadingItemId] = useState<string | null>(null);
 
   const isLight = theme === 'light';
+
+  // If user is not logged in, enforce authentication requirement
+  if (!currentUser) {
+    return (
+      <div className="flex-1 w-full overflow-y-auto flex flex-col justify-between">
+        <section className="max-w-xl mx-auto px-4 py-16 text-center my-auto">
+          <div className="w-16 h-16 rounded-3xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center mx-auto mb-5 shadow-sm">
+            <Lock className="w-8 h-8 text-[#4B00F2]" />
+          </div>
+
+          <h2 className="text-2xl font-black tracking-tight mb-2">
+            My Downloads is Available Only After Login
+          </h2>
+
+          <p className={`text-sm leading-relaxed mb-8 ${isLight ? 'text-zinc-600' : 'text-zinc-400'}`}>
+            Please sign in or create a free maker account to access your purchased CAD models, commercial licenses, order history, and instant STL downloads.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={onOpenAuth}
+              className="w-full sm:w-auto px-6 py-3 rounded-2xl font-bold text-sm bg-[#4B00F2] hover:bg-[#3D00C6] text-white shadow-lg shadow-[#4B00F2]/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Sign In / Create Account</span>
+            </button>
+          </div>
+
+          <div className={`mt-8 p-4 rounded-2xl border text-xs text-left space-y-1.5 ${
+            isLight ? 'bg-zinc-50 border-zinc-200 text-zinc-600' : 'bg-zinc-900/60 border-zinc-800 text-zinc-400'
+          }`}>
+            <div className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-[#4B00F2]" />
+              <span>Why do I need to sign in?</span>
+            </div>
+            <p>
+              Your digital CAD certificates and re-download links are tied to your Fabify account, allowing you to re-export your customized watertight STL models anytime from any device.
+            </p>
+          </div>
+        </section>
+
+        {/* Studio Footnote Footage */}
+        <FoundationFootnote theme={theme} variant="studio" className="block shrink-0 z-20" />
+      </div>
+    );
+  }
 
   // Flatten all items across all orders
   const allItems: { item: CartItem; order: OrderRecord }[] = [];
@@ -82,6 +139,34 @@ export const MyDownloadsView: React.FC<MyDownloadsViewProps> = ({
     }
   };
 
+  const handleDownloadSTEP = async (item: CartItem) => {
+    setDownloadingItemId(item.id);
+    try {
+      const font = await loadHelveticaFont('bold');
+      if (item.productType === 'box' && item.boxConfig) {
+        const generated = await generateBoxModel(item.boxConfig, font);
+        const slug = (item.customText || 'desk_box').replace(/[^a-zA-Z0-9_-]/g, '_');
+        exportSTEP(generated.exportGeometry, {
+          filename: `Fabify_CAD_${slug}.step`,
+          modelName: item.title,
+          isCommercial: true,
+        });
+      } else if (item.tagConfig) {
+        const generated = await generateTagModel(item.tagConfig, font);
+        const slug = (item.customText || 'tag').replace(/[^a-zA-Z0-9_-]/g, '_');
+        exportSTEP(generated.exportGeometry, {
+          filename: `Fabify_CAD_${slug}.step`,
+          modelName: item.title,
+          isCommercial: true,
+        });
+      }
+    } catch (e) {
+      console.error('Error downloading STEP CAD:', e);
+    } finally {
+      setDownloadingItemId(null);
+    }
+  };
+
   const handleDownloadLicense = (item: CartItem, order: OrderRecord) => {
     const text = `FABIFY 3D DIGITAL LICENSE CERTIFICATE
 ======================================
@@ -104,7 +189,7 @@ License Grant: ${item.licenseType === 'commercial' ? 'COMMERCIAL 3D PRINTING LIC
   };
 
   return (
-    <div className="flex-1 w-full overflow-y-auto">
+    <div className="flex-1 w-full overflow-y-auto flex flex-col justify-between">
       {/* Header */}
       <section className={`py-10 px-4 sm:px-6 border-b text-center ${
         isLight ? 'bg-white border-zinc-200' : 'bg-zinc-950 border-zinc-800'
@@ -180,8 +265,22 @@ License Grant: ${item.licenseType === 'commercial' ? 'COMMERCIAL 3D PRINTING LIC
                         <span className="text-[11px] text-zinc-500 font-mono">Order {order.orderId}</span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      {item.licenseType}
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-lg font-bold uppercase inline-flex items-center gap-1 ${
+                      item.isFree
+                        ? 'bg-[#4B00F2]/10 text-[#4B00F2] dark:text-[#855BFF] border border-[#4B00F2]/30'
+                        : 'bg-[#F26C65]/10 text-[#F26C65] dark:text-[#FF8D87] border border-[#F26C65]/30'
+                    }`}>
+                      {item.isFree ? (
+                        <>
+                          <Download className="w-2.5 h-2.5" />
+                          <span>FREE STL</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-2.5 h-2.5" />
+                          <span>COMMERCIAL</span>
+                        </>
+                      )}
                     </span>
                   </div>
 
@@ -249,6 +348,9 @@ License Grant: ${item.licenseType === 'commercial' ? 'COMMERCIAL 3D PRINTING LIC
           </div>
         )}
       </section>
+
+      {/* Studio Footnote Footage */}
+      <FoundationFootnote theme={theme} variant="studio" className="block shrink-0 z-20" />
     </div>
   );
 };

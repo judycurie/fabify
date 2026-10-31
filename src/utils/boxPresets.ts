@@ -24,6 +24,8 @@ export const DEFAULT_BOX_CONFIG: BoxConfig = {
   labelFontSize: 7.0,
   labelStyle: 'embossed',
   labelRelief: 1.0,
+  textPosition: 'front_center',
+  textVerticalOffset: 0,
 
   primaryColor: '#18181b', // Matte Black
   accentColor: '#ffffff',  // Pure White

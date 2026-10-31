@@ -18,6 +18,107 @@
   .pt-safe {
     padding-top: max(0.5rem, env(safe-area-inset-top));
   }
+
+  /* Fab Foundation Poland Brand Color Palette */
+  /* Primary Accent: Electric Indigo #4B00F2 rgb(75, 0, 242) */
+  .bg-primary-indigo {
+    background-color: #4B00F2;
+  }
+  .text-primary-indigo {
+    color: #4B00F2;
+  }
+  .border-primary-indigo {
+    border-color: #4B00F2;
+  }
+
+  /* Secondary Accent: Periwinkle Blue #6F7AF7 rgb(111, 122, 247) */
+  .bg-secondary-periwinkle {
+    background-color: #6F7AF7;
+  }
+  .text-secondary-periwinkle {
+    color: #6F7AF7;
+  }
+  .border-secondary-periwinkle {
+    border-color: #6F7AF7;
+  }
+
+  /* Mid-Tone Neutral: Lavender Mist #B4BDFA rgb(180, 189, 250) */
+  .bg-neutral-lavender {
+    background-color: #B4BDFA;
+  }
+  .text-neutral-lavender {
+    color: #B4BDFA;
+  }
+  .border-neutral-lavender {
+    border-color: #B4BDFA;
+  }
+
+  /* Warm Accent: Rose Mist #D99EB7 rgb(217, 158, 183) */
+  .bg-warm-rose {
+    background-color: #D99EB7;
+  }
+  .text-warm-rose {
+    color: #D99EB7;
+  }
+  .border-warm-rose {
+    border-color: #D99EB7;
+  }
+
+  /* Highlight Accent: Coral Sunset #F26C65 rgb(242, 108, 101) */
+  .bg-coral-sunset {
+    background-color: #F26C65;
+  }
+  .text-coral-sunset {
+    color: #F26C65;
+  }
+  .border-coral-sunset {
+    border-color: #F26C65;
+  }
+
+  /* Palettes calibrated to #4B00F2 -> #6F7AF7 -> #D99EB7 -> #F26C65 */
+  .bg-jc-gradient {
+    background: linear-gradient(135deg, #4B00F2 0%, #6F7AF7 45%, #F26C65 100%);
+  }
+
+  .bg-jc-gradient-horizontal {
+    background: linear-gradient(90deg, #4B00F2 0%, #6F7AF7 45%, #F26C65 100%);
+  }
+
+  .bg-jc-gradient-soft {
+    background: linear-gradient(135deg, rgba(75, 0, 242, 0.08) 0%, rgba(111, 122, 247, 0.06) 50%, rgba(242, 108, 101, 0.08) 100%);
+  }
+
+  .text-jc-gradient {
+    background: linear-gradient(90deg, #4B00F2 0%, #6F7AF7 45%, #F26C65 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-jc-gradient-bright {
+    background: linear-gradient(90deg, #6F7AF7 0%, #B4BDFA 50%, #F26C65 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .border-jc-gradient {
+    border-image: linear-gradient(90deg, #4B00F2 0%, #6F7AF7 50%, #F26C65 100%) 1;
+  }
+
+  .shadow-jc-glow {
+    box-shadow: 0 10px 30px -5px rgba(75, 0, 242, 0.35), 0 4px 15px -2px rgba(242, 108, 101, 0.25);
+  }
+
+  .shadow-jc-glow-subtle {
+    box-shadow: 0 6px 20px -4px rgba(75, 0, 242, 0.22), 0 2px 8px -1px rgba(242, 108, 101, 0.16);
+  }
+
+  .shadow-coral-glow {
+    box-shadow: 0 8px 24px -4px rgba(242, 108, 101, 0.35), 0 2px 6px -1px rgba(217, 158, 183, 0.2);
+  }
+
+  .shadow-indigo-glow {
+    box-shadow: 0 8px 24px -4px rgba(75, 0, 242, 0.35), 0 2px 6px -1px rgba(111, 122, 247, 0.2);
+  }
 }
 
 /* Prevent unwanted body pull-to-refresh on mobile while allowing inner scrolls */

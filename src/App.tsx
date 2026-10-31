@@ -23,10 +23,11 @@ import { loadHelveticaFont } from './utils/fontLoader';
 import { generateTagModel, GeneratedTagModel } from './utils/tagGeometry';
 import { generateBoxModel } from './utils/boxGeometry';
 import { exportSTL, exportMultiPartSTL, getSafeFilename, fireExportConfetti } from './utils/stlExporter';
-import { getSavedCart, saveCartToStorage, isTemplatePurchased } from './utils/orders';
+import { getSavedCart, saveCartToStorage, isTemplatePurchased, createNewDigitalOrder } from './utils/orders';
 import { VALID_PROMO_CODES, calculateDigitalItemPrice } from './utils/pricing';
 import { UserProfile } from './types/auth';
 import { getCurrentUser, logoutUser } from './utils/auth';
+import { verifyStripeSession } from './utils/stripeService';
 
 import { TopHeader, NavPage, StudioConfigurator } from './components/TopHeader';
 import { Viewport3D } from './components/Viewport3D';
@@ -37,8 +38,11 @@ import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
 import { OrderSuccessModal } from './components/OrderSuccessModal';
 import { CatalogView } from './components/CatalogView';
+import { ConfiguratorsView } from './components/ConfiguratorsView';
 import { MyDownloadsView } from './components/MyDownloadsView';
 import { AuthModal } from './components/AuthModal';
+import { FoundationFootnote } from './components/FoundationFootnote';
+import { Sparkles, ArrowRight, Lock, Download, ShoppingBag } from 'lucide-react';
 
 export default function App() {
   const [theme, setTheme] = useState<AppTheme>('light');
@@ -50,17 +54,20 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const pendingDownloadActionRef = useRef<(() => void) | null>(null);
 
-  // Active Template / Provenance Tracking (Free vs Paid Commercial License)
+  // Active Template / Provenance Tracking (Defaults to Tag Keys)
   const [activeTemplate, setActiveTemplate] = useState<ActiveTemplateInfo>({
     id: 'keychain',
-    name: 'Keychain Tag',
+    name: 'Tag Keys',
     isFree: true,
     price: 0,
     productType: 'tag',
   });
 
-  // Tag Configurator State
-  const [tagConfig, setTagConfig] = useState<TagConfig>(DEFAULT_TAG_CONFIG);
+  // Tag Configurator State (Initialized with Tag Keys text 'KEYS')
+  const [tagConfig, setTagConfig] = useState<TagConfig>({
+    ...DEFAULT_TAG_CONFIG,
+    text: 'KEYS',
+  });
   const [tagModel, setTagModel] = useState<GeneratedTagModel | null>(null);
   const [activeTagSheet, setActiveTagSheet] = useState<ActiveSheetTab>(null);
 
@@ -95,6 +102,39 @@ export default function App() {
   useEffect(() => {
     saveCartToStorage(cartItems);
   }, [cartItems]);
+
+  // Handle return from Stripe Checkout Session (NO WEBHOOK REQUIRED!)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('order_success') === 'true') {
+      const sessionId = params.get('session_id') || `cs_stripe_${Date.now()}`;
+      // Clean up URL query parameters without page reload
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      verifyStripeSession(sessionId).then((verification) => {
+        if (verification.paid) {
+          if (cartItems.length > 0) {
+            const order = createNewDigitalOrder({
+              items: cartItems,
+              customer: {
+                fullName: verification.customerName || currentUser?.name || 'Fab Foundation Maker',
+                email: verification.customerEmail || currentUser?.email || 'maker@fabfoundation.pl',
+              },
+              subtotal: verification.amountTotal || cartItems.reduce((acc, i) => acc + i.totalPrice, 0),
+              discount: 0,
+              total: verification.amountTotal || cartItems.reduce((acc, i) => acc + i.totalPrice, 0),
+              paymentMethod: 'card',
+              last4Card: 'Stripe',
+            });
+            setCompletedOrder(order);
+            setIsOrderSuccessOpen(true);
+            setCartItems([]);
+          }
+          fireExportConfetti();
+        }
+      });
+    }
+  }, []);
 
   // Load font
   useEffect(() => {
@@ -189,6 +229,27 @@ export default function App() {
   // Box Configuration Handlers
   const handleUpdateBoxConfig = (partial: Partial<BoxConfig>) => {
     setBoxConfig((prev) => ({ ...prev, ...partial }));
+  };
+
+  const handleChangeConfigurator = (mode: StudioConfigurator) => {
+    setActiveConfigurator(mode);
+    if (mode === 'box' && activeTemplate.productType !== 'box') {
+      setActiveTemplate({
+        id: 'free_desk_catchall',
+        name: 'Catchall Tray',
+        isFree: true,
+        price: 0,
+        productType: 'box',
+      });
+    } else if (mode === 'tag' && activeTemplate.productType !== 'tag') {
+      setActiveTemplate({
+        id: 'keychain',
+        name: 'Tag Keys',
+        isFree: true,
+        price: 0,
+        productType: 'tag',
+      });
+    }
   };
 
   // Trigger Purchase / Checkout flow for the current customized model
@@ -471,7 +532,7 @@ export default function App() {
         currentPage={currentPage}
         onNavigate={setCurrentPage}
         activeConfigurator={activeConfigurator}
-        onChangeConfigurator={setActiveConfigurator}
+        onChangeConfigurator={handleChangeConfigurator}
         tagConfig={tagConfig}
         boxConfig={boxConfig}
         tagDimensions={tagModel?.dimensions || null}
@@ -498,54 +559,99 @@ export default function App() {
       {/* Main App Body */}
       <main className="relative flex-1 w-full h-[calc(100dvh-56px)] overflow-hidden flex flex-col">
         {currentPage === 'studio' && (
-          <div className="relative w-full h-full overflow-hidden">
-            {/* 3D Viewport with live Three.js scene */}
-            <Viewport3D
-              model={currentActiveModel}
-              config={currentViewportConfig}
-              theme={theme}
-              isLoading={isLoading || isFontLoading}
-              isSheetOpen={activeConfigurator === 'tag' ? activeTagSheet !== null : activeBoxSheet !== null}
-              onCanvasClick={() => {
-                setActiveTagSheet(null);
-                setActiveBoxSheet(null);
-              }}
-            />
+          <div className="relative w-full h-full overflow-hidden flex flex-col justify-between">
+            <div className="relative flex-1 w-full overflow-hidden">
+              {/* Active Template Status Pill & Explore More Templates Button */}
+              <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex flex-wrap items-center gap-2 pointer-events-auto">
+                <div className={`px-3 py-1.5 rounded-2xl border shadow-lg backdrop-blur-xl flex items-center gap-2 text-xs transition-all ${
+                  theme === 'light'
+                    ? 'bg-white/95 border-zinc-200 text-zinc-900 shadow-zinc-300/40'
+                    : 'bg-zinc-900/95 border-zinc-800 text-zinc-100 shadow-black'
+                }`}>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Template:</span>
+                  <span className="font-bold">{activeTemplate.name}</span>
+                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-white shadow-sm inline-flex items-center gap-1 ${
+                    activeTemplate.isFree
+                      ? 'bg-[#4B00F2]'
+                      : 'bg-[#F26C65]'
+                  }`}>
+                    {activeTemplate.isFree ? (
+                      <>
+                        <Download className="w-3 h-3 text-white" />
+                        <span>FREE STL</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3 h-3 text-white" />
+                        <span>${activeTemplate.price.toFixed(2)} CAD</span>
+                      </>
+                    )}
+                  </span>
+                </div>
 
-            {/* Configurator-specific control docks with license gating */}
-            {activeConfigurator === 'tag' ? (
-              <ControlDock
-                config={tagConfig}
-                dimensions={tagModel?.dimensions || null}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage('catalog')}
+                  className="px-3.5 py-1.5 rounded-2xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 bg-gradient-to-r from-[#4B00F2] via-[#A832E5] to-[#F26C65] hover:opacity-95 text-white cursor-pointer active:scale-95 shadow-[#4B00F2]/25"
+                  title="Browse all 3D templates in configurators"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Explore More Templates</span>
+                  <ArrowRight className="w-3.5 h-3.5 opacity-80" />
+                </button>
+              </div>
+
+              {/* 3D Viewport with live Three.js scene */}
+              <Viewport3D
+                model={currentActiveModel}
+                config={currentViewportConfig}
                 theme={theme}
-                activeTab={activeTagSheet}
-                onSelectTab={setActiveTagSheet}
-                onChange={handleUpdateTagConfig}
-                onExportSTL={handleExportTagSTL}
-                onExportMultiPart={handleExportTagMultiPart}
-                onOpenSpecs={() => setShowSpecsModal(true)}
-                isFree={activeTemplate.isFree}
-                price={activeTemplate.price}
-                isPurchased={isCurrentTemplatePurchased}
-                templateName={activeTemplate.name}
-                onPurchase={handlePurchaseCurrentTemplate}
+                isLoading={isLoading || isFontLoading}
+                isSheetOpen={activeConfigurator === 'tag' ? activeTagSheet !== null : activeBoxSheet !== null}
+                onCanvasClick={() => {
+                  setActiveTagSheet(null);
+                  setActiveBoxSheet(null);
+                }}
               />
-            ) : (
-              <BoxControlDock
-                config={boxConfig}
-                dimensions={(boxModel as any)?.boxDimensions || null}
-                theme={theme}
-                activeTab={activeBoxSheet}
-                onSelectTab={setActiveBoxSheet}
-                onChange={handleUpdateBoxConfig}
-                onExportSTL={handleExportBoxSTL}
-                isFree={activeTemplate.isFree}
-                price={activeTemplate.price}
-                isPurchased={isCurrentTemplatePurchased}
-                templateName={activeTemplate.name}
-                onPurchase={handlePurchaseCurrentTemplate}
-              />
-            )}
+
+              {/* Configurator-specific control docks with license gating */}
+              {activeConfigurator === 'tag' ? (
+                <ControlDock
+                  config={tagConfig}
+                  dimensions={tagModel?.dimensions || null}
+                  theme={theme}
+                  activeTab={activeTagSheet}
+                  onSelectTab={setActiveTagSheet}
+                  onChange={handleUpdateTagConfig}
+                  onExportSTL={handleExportTagSTL}
+                  onExportMultiPart={handleExportTagMultiPart}
+                  onOpenSpecs={() => setShowSpecsModal(true)}
+                  isFree={activeTemplate.isFree}
+                  price={activeTemplate.price}
+                  isPurchased={isCurrentTemplatePurchased}
+                  templateName={activeTemplate.name}
+                  onPurchase={handlePurchaseCurrentTemplate}
+                />
+              ) : (
+                <BoxControlDock
+                  config={boxConfig}
+                  dimensions={(boxModel as any)?.boxDimensions || null}
+                  theme={theme}
+                  activeTab={activeBoxSheet}
+                  onSelectTab={setActiveBoxSheet}
+                  onChange={handleUpdateBoxConfig}
+                  onExportSTL={handleExportBoxSTL}
+                  isFree={activeTemplate.isFree}
+                  price={activeTemplate.price}
+                  isPurchased={isCurrentTemplatePurchased}
+                  templateName={activeTemplate.name}
+                  onPurchase={handlePurchaseCurrentTemplate}
+                />
+              )}
+            </div>
+
+            {/* Studio Bottom Footnote Bar with FFP Logotype and Mission Note */}
+            <FoundationFootnote theme={theme} variant="studio" className="block shrink-0 z-20" />
           </div>
         )}
 
@@ -560,9 +666,21 @@ export default function App() {
           />
         )}
 
+        {currentPage === 'configurators' && (
+          <ConfiguratorsView
+            theme={theme}
+            onOpenNativeStudio={(type) => {
+              setActiveConfigurator(type);
+              setCurrentPage('studio');
+            }}
+          />
+        )}
+
         {currentPage === 'downloads' && (
           <MyDownloadsView
             theme={theme}
+            currentUser={currentUser}
+            onOpenAuth={() => setIsAuthOpen(true)}
             onOpenTagInStudio={(cfg) => {
               setTagConfig(cfg);
               setActiveConfigurator('tag');

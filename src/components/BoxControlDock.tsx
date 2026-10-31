@@ -38,6 +38,7 @@ interface BoxControlDockProps {
   onSelectTab: (tab: BoxActiveTab) => void;
   onChange: (partial: Partial<BoxConfig>) => void;
   onExportSTL: (binary: boolean) => void;
+  onExportSTEP?: () => void;
   onOpenLicenseModal?: () => void;
   isFree?: boolean;
   price?: number;
@@ -65,6 +66,7 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
   onSelectTab,
   onChange,
   onExportSTL,
+  onExportSTEP,
   onOpenLicenseModal,
   isFree = true,
   price = 0,
@@ -74,7 +76,18 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
 }) => {
   const isLight = theme === 'light';
   const isSheetOpen = activeTab !== null;
-  const isUnlocked = isFree || isPurchased;
+  const bName = templateName?.toLowerCase() || '';
+  const isPaidBox = 
+    !isFree || 
+    price > 0 ||
+    bName.includes('valet') ||
+    bName.includes('edc') ||
+    bName.includes('stack') ||
+    bName.includes('tier') ||
+    bName.includes('hardware') ||
+    bName.includes('screws');
+
+  const isUnlocked = !isPaidBox || isPurchased;
 
   const stepValue = (
     key: keyof BoxConfig,
@@ -100,26 +113,26 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
         />
       )}
 
-      {/* Slide-Up Drawer */}
+      {/* Slide-in Flyout Panel from the Right */}
       <div
-        className={`fixed left-0 right-0 z-20 transition-all duration-300 ease-out flex flex-col ${
+        className={`fixed right-12 sm:right-16 top-14 sm:top-16 bottom-11 sm:bottom-14 z-30 transition-all duration-300 ease-out w-[calc(100vw-58px)] sm:w-[380px] max-w-[420px] ${
           isSheetOpen
-            ? 'bottom-16 sm:bottom-14 max-h-[72vh] sm:max-h-[60vh] opacity-100 translate-y-0'
-            : 'bottom-0 max-h-0 opacity-0 pointer-events-none translate-y-6'
+            ? 'translate-x-0 opacity-100 pointer-events-auto'
+            : 'translate-x-8 opacity-0 pointer-events-none'
         }`}
       >
         <div
-          className={`max-w-2xl w-full mx-auto rounded-t-3xl border-t border-x shadow-2xl flex flex-col overflow-hidden ${
+          className={`h-full rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border backdrop-blur-2xl transition-colors duration-200 flex flex-col ${
             isLight
-              ? 'bg-white/95 border-zinc-200 text-zinc-900 shadow-zinc-400/20'
-              : 'bg-zinc-900/95 border-zinc-800 text-zinc-100 shadow-black/80'
-          } backdrop-blur-xl`}
+              ? 'bg-white/98 border-zinc-200 shadow-zinc-400/40 text-zinc-900'
+              : 'bg-zinc-900/98 border-zinc-800 shadow-black text-zinc-100'
+          }`}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-3.5 pb-2.5 border-b border-zinc-200/60 dark:border-zinc-800/60 shrink-0">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-xs uppercase tracking-wider text-zinc-500">
-                Desk Organizer Engine · {activeTab}
+              <span className="font-bold text-xs uppercase tracking-wider text-[#4B00F2]">
+                Desk Organizer · {activeTab}
               </span>
             </div>
             <button
@@ -368,7 +381,7 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
                     type="button"
                     onClick={() => onChange({ hasScoop: !config.hasScoop })}
                     className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
-                      config.hasScoop ? 'bg-emerald-600' : 'bg-zinc-300 dark:bg-zinc-700'
+                      config.hasScoop ? 'bg-[#4B00F2]' : 'bg-zinc-300 dark:bg-zinc-700'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded-full bg-white transition-transform ${
@@ -458,7 +471,7 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
                     type="button"
                     onClick={() => onChange({ hasStackingLip: !config.hasStackingLip })}
                     className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
-                      config.hasStackingLip ? 'bg-emerald-600' : 'bg-zinc-300 dark:bg-zinc-700'
+                      config.hasStackingLip ? 'bg-[#4B00F2]' : 'bg-zinc-300 dark:bg-zinc-700'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded-full bg-white transition-transform ${
@@ -521,6 +534,85 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
                   </button>
                 </div>
 
+                {/* Text Position on Organizer */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-xs">Text Position & Placement</label>
+                    <span className="text-[11px] font-mono text-zinc-400">
+                      {config.textPosition === 'front_center' && 'Front Center'}
+                      {config.textPosition === 'front_top' && 'Front Top'}
+                      {config.textPosition === 'front_bottom' && 'Front Bottom'}
+                      {config.textPosition === 'front_left' && 'Front Left'}
+                      {config.textPosition === 'front_right' && 'Front Right'}
+                      {config.textPosition === 'back_wall' && 'Back Face'}
+                      {config.textPosition === 'inside_bottom' && 'Inside Floor'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 gap-1.5 text-xs">
+                    {[
+                      { id: 'front_center', label: 'Front Center' },
+                      { id: 'front_top', label: 'Front Top' },
+                      { id: 'front_bottom', label: 'Front Bottom' },
+                      { id: 'front_left', label: 'Front Left' },
+                      { id: 'front_right', label: 'Front Right' },
+                      { id: 'back_wall', label: 'Back Face' },
+                      { id: 'inside_bottom', label: 'Inside Floor' },
+                    ].map((pos) => {
+                      const isSel = (config.textPosition || 'front_center') === pos.id;
+                      return (
+                        <button
+                          key={pos.id}
+                          type="button"
+                          onClick={() => onChange({ textPosition: pos.id as any })}
+                          className={`py-1.5 px-2 rounded-xl border text-[11px] font-semibold transition-all truncate text-center ${
+                            isSel
+                              ? isLight 
+                                ? 'bg-zinc-950 text-white border-zinc-950 shadow-sm' 
+                                : 'bg-white text-zinc-950 border-white shadow-sm'
+                              : isLight 
+                              ? 'border-zinc-200 hover:border-zinc-300 bg-white text-zinc-700' 
+                              : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900 text-zinc-300'
+                          }`}
+                        >
+                          {pos.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Fine Vertical Offset */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-semibold">Vertical Position Offset</span>
+                    <span className="font-mono font-bold">{(config.textVerticalOffset || 0) > 0 ? `+${config.textVerticalOffset} mm` : `${config.textVerticalOffset || 0} mm`}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onChange({ textVerticalOffset: Math.max(-15, (config.textVerticalOffset || 0) - 1) })}
+                      className="w-8 h-8 rounded-lg border flex items-center justify-center font-bold text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <input
+                      type="range"
+                      min={-15}
+                      max={15}
+                      step={1}
+                      value={config.textVerticalOffset || 0}
+                      onChange={(e) => onChange({ textVerticalOffset: Number(e.target.value) })}
+                      className="flex-1 accent-zinc-900 dark:accent-white"
+                    />
+                    <button
+                      onClick={() => onChange({ textVerticalOffset: Math.min(15, (config.textVerticalOffset || 0) + 1) })}
+                      className="w-8 h-8 rounded-lg border flex items-center justify-center font-bold text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
                 {/* Color Swatches */}
                 <div className="space-y-2 pt-2">
                   <label className="font-bold text-xs block">Box Finish Color</label>
@@ -533,7 +625,7 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
                           onClick={() => onChange({ primaryColor: col.value })}
                           title={col.name}
                           className={`w-7 h-7 rounded-full border-2 transition-transform ${
-                            isSel ? 'ring-2 ring-emerald-500 scale-110' : 'hover:scale-105'
+                            isSel ? 'ring-2 ring-[#4B00F2] scale-110' : 'hover:scale-105'
                           }`}
                           style={{ backgroundColor: col.value, borderColor: '#71717a' }}
                         />
@@ -548,12 +640,12 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
             {activeTab === 'export' && (
               <div className="space-y-4">
                 {!isUnlocked ? (
-                  /* GATED PREMIUM CAD LICENSE CARD */
+                  /* GATED PREMIUM CAD LICENSE CARD - ONLY OPTION IS ADD TO BASKET */
                   <div className={`p-4 sm:p-5 rounded-2xl border space-y-4 ${
                     isLight ? 'bg-amber-50/80 border-amber-300' : 'bg-amber-950/20 border-amber-800/60'
                   }`}>
                     <div className="flex items-start gap-3">
-                      <div className="p-3 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
+                      <div className="p-3 rounded-xl bg-[#F26C65]/15 text-[#F26C65] shrink-0">
                         <Lock className="w-5 h-5" />
                       </div>
                       <div>
@@ -561,67 +653,101 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
                           <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                             Commercial CAD License Required
                           </h4>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase bg-amber-200/80 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase bg-[#F26C65]/15 text-[#F26C65] border border-[#F26C65]/30">
                             ${(price || 3.50).toFixed(2)}
                           </span>
                         </div>
                         <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 leading-relaxed">
-                          <strong>{templateName || 'This organizer'}</strong> is a premium parametric template. Free STL downloads are disabled. Purchase a CAD license to export slicer-ready files.
+                          <strong>{templateName || 'This organizer'}</strong> is a commercial design. Free models generate STLs, while paid models generate production <strong>STEP (.step)</strong> CAD files plus slice-ready STLs.
                         </p>
                       </div>
                     </div>
 
-                    <div className="text-xs space-y-1.5 pl-2 border-l-2 border-amber-500/40 text-zinc-600 dark:text-zinc-400">
+                    <div className="text-xs space-y-1.5 pl-2 border-l-2 border-[#F26C65]/40 text-zinc-600 dark:text-zinc-400">
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-[#4B00F2] shrink-0" />
+                        <span>Generates Production STEP (.step) CAD solid for Fusion 360 & SolidWorks</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-[#4B00F2] shrink-0" />
                         <span>Commercial physical print rights (sell unlimited printed organizers)</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-[#4B00F2] shrink-0" />
                         <span>Watertight binary STL with smooth scoops & stacking rims</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-[#4B00F2] shrink-0" />
                         <span>Permanent access & re-downloads in your library</span>
                       </div>
                     </div>
 
+                    {/* ONLY OPTION FOR PAID MODEL: ADD TO BASKET */}
                     <button
                       type="button"
                       onClick={onPurchase}
-                      className="w-full py-3 px-4 rounded-xl font-bold text-xs shadow-md bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                      className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-[#F26C65] hover:bg-[#D9554E] text-white flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-md shadow-[#F26C65]/20"
                     >
-                      <ShoppingBag className="w-4 h-4" />
-                      <span>Add to Basket & Download (${(price || 3.50).toFixed(2)})</span>
+                      <ShoppingBag className="w-4 h-4 text-white" />
+                      <span>Add to Basket (${(price || 3.50).toFixed(2)})</span>
                     </button>
                   </div>
                 ) : (
-                  /* Instant Free / Digital CAD Download */
-                  <button
-                    type="button"
-                    onClick={() => onExportSTL(true)}
-                    className="w-full p-4 rounded-2xl text-left border border-emerald-500/40 transition-all active:scale-[0.98] flex items-center justify-between shadow-md bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-xl bg-white/15 text-white">
-                        <Download className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm block">
-                            {isPurchased ? 'Download Licensed STL' : 'Download Free STL'}
-                          </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-bold uppercase bg-white/20 text-white">
-                            {isPurchased ? 'LICENSED' : 'FREE'}
+                  <>
+                    {/* For Purchased Paid Models: Generate Production CAD STEP */}
+                    {isPurchased && onExportSTEP && (
+                      <button
+                        type="button"
+                        onClick={onExportSTEP}
+                        className="w-full p-4 rounded-2xl text-left border border-transparent transition-all active:scale-[0.98] flex items-center justify-between bg-[#F26C65] hover:bg-[#D9554E] text-white shadow-md shadow-[#F26C65]/20 cursor-pointer mb-2.5"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-white/20 text-white">
+                            <FileCode className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-sm block">Download Production STEP (.step)</span>
+                              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/25 text-white font-bold uppercase">
+                                CAD SOLID
+                              </span>
+                            </div>
+                            <span className="text-[11px] block mt-0.5 text-white/90">
+                              ISO 10303-21 standard solid for SolidWorks, Fusion 360, FreeCAD
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 opacity-80 shrink-0" />
+                      </button>
+                    )}
+
+                    {/* Instant Free / Digital CAD Download with #4B00F2 */}
+                    <button
+                      type="button"
+                      onClick={() => onExportSTL(true)}
+                      className="w-full p-4 rounded-2xl text-left border border-white/20 transition-all active:scale-[0.98] flex items-center justify-between shadow-indigo-glow bg-[#4B00F2] hover:bg-[#3D00C6] text-white cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-xl bg-white/20 text-white">
+                          <Download className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm block">
+                              {isPurchased ? 'Download Slicer STL' : 'Download Free STL'}
+                            </span>
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-bold uppercase bg-white/25 text-white">
+                              {isPurchased ? 'LICENSED' : 'FREE'}
+                            </span>
+                          </div>
+                          <span className="text-[11px] block mt-0.5 text-white/90">
+                            Watertight slicer-ready model (Bambu, Prusa, Cura, OrcaSlicer)
                           </span>
                         </div>
-                        <span className="text-[11px] block mt-0.5 text-emerald-100">
-                          Watertight slicer-ready model (Bambu, Prusa, Cura, OrcaSlicer)
-                        </span>
                       </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 opacity-75 shrink-0" />
-                  </button>
+                      <ChevronRight className="w-4 h-4 opacity-80 shrink-0" />
+                    </button>
+                  </>
                 )}
 
                 {/* Slicer specs summary */}
@@ -631,7 +757,7 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
                   }`}>
                     <div className="flex items-center justify-between border-b pb-2">
                       <div className="flex items-center gap-1.5 font-bold">
-                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                        <ShieldCheck className="w-4 h-4 text-[#4B00F2]" />
                         <span>Watertight Sliced Mesh</span>
                       </div>
                       <span className="font-mono font-semibold">
@@ -665,19 +791,22 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
         </div>
       </div>
 
-      {/* Persistent Bottom Bar for Box Configurator */}
+      {/* Right-aligned Vertical Compact Navigation Ribbon for Box Configurator */}
       <nav
-        className={`fixed bottom-0 left-0 right-0 z-30 pb-safe border-t transition-colors duration-200 backdrop-blur-xl ${
-          isLight ? 'bg-white/95 border-zinc-200 text-zinc-900 shadow-lg' : 'bg-zinc-950/95 border-zinc-800 text-zinc-100 shadow-2xl'
+        aria-label="Grid Box Tools Navigation Ribbon"
+        className={`fixed right-1.5 sm:right-3 top-1/2 -translate-y-1/2 z-30 p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border shadow-xl transition-all duration-200 backdrop-blur-xl ${
+          isLight
+            ? 'bg-white/95 border-zinc-200/90 text-zinc-900 shadow-zinc-400/25'
+            : 'bg-zinc-950/95 border-zinc-800/90 text-zinc-100 shadow-black'
         }`}
       >
-        <div className="max-w-lg mx-auto px-2 flex items-center justify-around h-16 sm:h-14">
+        <div className="flex flex-col items-center gap-0.5 sm:gap-1">
           {[
-            { id: 'dimensions' as BoxActiveTab, label: 'Dimensions', icon: Box },
+            { id: 'dimensions' as BoxActiveTab, label: 'Size', icon: Box },
             { id: 'grid' as BoxActiveTab, label: 'Grid', icon: Grid3X3 },
             { id: 'structure' as BoxActiveTab, label: 'Walls', icon: Layers },
             { id: 'label' as BoxActiveTab, label: 'Label', icon: Type },
-            { id: 'export' as BoxActiveTab, label: 'Download', icon: Download, isCTA: true },
+            { id: 'export' as BoxActiveTab, label: !isUnlocked ? 'Add to Basket' : 'Export', icon: Download, isCTA: true },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -687,20 +816,23 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => onSelectTab(isActive ? null : tab.id)}
-                  aria-label={!isUnlocked ? "Add to Basket" : "Download STL"}
-                  className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all active:scale-95 min-h-[48px] min-w-[56px] ${
-                    isActive
-                      ? !isUnlocked
-                        ? 'bg-amber-600 text-white shadow-md'
-                        : 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                      : !isUnlocked
-                      ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-amber-950 dark:hover:bg-amber-900 dark:text-amber-200'
-                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-800/80'
-                  }`}
+                  onClick={() => {
+                    if (!isUnlocked && onPurchase) {
+                      onPurchase();
+                    } else {
+                      onSelectTab(isActive ? null : tab.id);
+                    }
+                  }}
+                  aria-label={!isUnlocked ? "Add to Basket" : "Download Free STL"}
+                  title={!isUnlocked ? `Add to Basket ($${(price > 0 ? price : 3.50).toFixed(2)})` : "Download Free STL"}
+                  className={`flex flex-col items-center justify-center p-0.5 sm:p-1 rounded-lg sm:rounded-xl transition-all active:scale-95 w-9 sm:w-11 h-9 sm:h-11 text-white shadow-md cursor-pointer ${
+                    !isUnlocked
+                      ? 'bg-[#F26C65] hover:bg-[#D9554E]'
+                      : 'bg-[#4B00F2] hover:bg-[#3D00C6]'
+                  } ${isActive ? 'ring-2 ring-offset-1 ' + (isLight ? 'ring-zinc-950 ring-offset-white' : 'ring-white ring-offset-zinc-950') : ''}`}
                 >
-                  <CTAIcon className="w-4 h-4 mb-0.5" />
-                  <span className="text-[10px] font-bold tracking-tight">
+                  <CTAIcon className="w-3.5 h-3.5 mb-0.5 text-white" />
+                  <span className="text-[6.5px] sm:text-[7.5px] font-bold tracking-tight text-white leading-tight text-center">
                     {!isUnlocked ? 'Basket' : 'Free STL'}
                   </span>
                 </button>
@@ -711,16 +843,20 @@ export const BoxControlDock: React.FC<BoxControlDockProps> = ({
               <button
                 key={tab.id}
                 onClick={() => onSelectTab(isActive ? null : tab.id)}
-                className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all active:scale-95 min-h-[48px] min-w-[56px] ${
+                aria-label={tab.label}
+                title={tab.label}
+                className={`relative flex flex-col items-center justify-center p-0.5 sm:p-1 rounded-lg sm:rounded-xl transition-all active:scale-95 w-9 sm:w-11 h-9 sm:h-11 cursor-pointer ${
                   isActive
-                    ? isLight ? 'text-zinc-950 font-bold' : 'text-white font-bold'
-                    : isLight ? 'text-zinc-500 hover:text-zinc-900' : 'text-zinc-400 hover:text-white'
+                    ? isLight
+                      ? 'bg-zinc-950 text-white font-bold shadow-md shadow-zinc-900/25 ring-1 ring-zinc-800'
+                      : 'bg-white text-zinc-950 font-bold shadow-md shadow-white/20 ring-1 ring-zinc-200'
+                    : isLight
+                    ? 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
                 }`}
               >
-                <div className={`p-1 rounded-lg ${isActive ? (isLight ? 'bg-zinc-200/80' : 'bg-zinc-800/80') : 'bg-transparent'}`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-medium tracking-tight mt-0.5">{tab.label}</span>
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-0.5" />
+                <span className="text-[7px] sm:text-[8px] font-semibold tracking-tight leading-tight">{tab.label}</span>
               </button>
             );
           })}

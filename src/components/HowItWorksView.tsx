@@ -57,18 +57,25 @@ export const HowItWorksView: React.FC<HowItWorksViewProps> = ({
 
   return (
     <div className="flex-1 w-full overflow-y-auto">
-      {/* Hero Header */}
-      <section className={`py-12 px-4 sm:px-6 border-b text-center ${
+      {/* Hero Header with Fab Foundation Poland Backdrop Pattern */}
+      <section className={`relative py-12 px-4 sm:px-6 border-b text-center overflow-hidden ${
         isLight ? 'bg-white border-zinc-200' : 'bg-zinc-950 border-zinc-800'
       }`}>
-        <div className="max-w-3xl mx-auto space-y-3">
-          <div className="flex items-center justify-center gap-2 text-xs font-mono uppercase tracking-wider text-zinc-500">
-            <span>The Fabrication Process</span>
+        {/* Subtle FFP Backdrop Pattern Overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.10] bg-center bg-cover"
+          style={{ backgroundImage: `url('/assets/aistudio/ffp-background2_6a73b052.jpg')` }}
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-bold bg-jc-gradient text-white shadow-jc-glow-subtle">
+            <span>Fab Foundation Poland</span>
             <span aria-hidden="true">·</span>
-            <span>From Browser to Bed</span>
+            <span>Procedural Fabrication</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            How Fabify 3D Works
+            How <span className="text-jc-gradient">Fabify 3D</span> Works
           </h1>
           <p className={`text-sm sm:text-base max-w-xl mx-auto ${isLight ? 'text-zinc-600' : 'text-zinc-400'}`}>
             Bridging procedural browser-based CAD engineering directly with industrial additive fabrication. No minimum orders, zero tooling fees.
@@ -130,12 +137,10 @@ export const HowItWorksView: React.FC<HowItWorksViewProps> = ({
           <button
             type="button"
             onClick={onGoToStudio}
-            className={`py-3 px-6 rounded-2xl font-bold text-xs shadow-md inline-flex items-center gap-2 transition-all active:scale-[0.98] ${
-              isLight ? 'bg-zinc-900 hover:bg-zinc-800 text-white' : 'bg-white hover:bg-zinc-100 text-zinc-950'
-            }`}
+            className="py-3 px-6 rounded-2xl font-bold text-xs shadow-jc-glow inline-flex items-center gap-2 transition-all active:scale-[0.98] bg-jc-gradient hover:brightness-110 text-white cursor-pointer"
           >
             <span>Open 3D Configurator Studio</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 text-white" />
           </button>
         </div>
       </section>
