@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { OrderRecord, CartItem } from '../types/cart';
 import { AppTheme } from '../types/tag';
 import { exportSTL, getSafeFilename } from '../utils/stlExporter';
+import { exportSTEP } from '../utils/stepExporter';
 import { generateBoxModel } from '../utils/boxGeometry';
 import { generateTagModel } from '../utils/tagGeometry';
 import { loadHelveticaFont } from '../utils/fontLoader';
@@ -86,27 +87,31 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
 
   const isLight = theme === 'light';
 
-  // Handler to generate and download STL file for an ordered item
-  const handleDownloadItemSTL = async (item: CartItem) => {
+  // Handler to generate and download STEP / CAD file for paid purchased item
+  const handleDownloadItemCAD = async (item: CartItem) => {
     try {
       const font = await loadHelveticaFont('bold');
       if (item.productType === 'box' && item.boxConfig) {
         const generated = await generateBoxModel(item.boxConfig, font);
         const slug = (item.customText || 'desk_box').replace(/[^a-zA-Z0-9_-]/g, '_');
-        exportSTL(generated.exportGeometry, {
-          filename: `Fabify_Box_${slug}.stl`,
-          binary: true,
+        exportSTEP(generated.exportGeometry, {
+          filename: `Fabify_CAD_${slug}.step`,
+          modelName: item.templateName || item.title,
+          isCommercial: true,
+          license: 'Commercial Production License (Paid CAD)',
         });
       } else if (item.tagConfig) {
         const generated = await generateTagModel(item.tagConfig, font);
         const slug = (item.customText || 'custom_tag').replace(/[^a-zA-Z0-9_-]/g, '_');
-        exportSTL(generated.exportGeometry, {
-          filename: `Fabify_Tag_${slug}.stl`,
-          binary: true,
+        exportSTEP(generated.exportGeometry, {
+          filename: `Fabify_CAD_${slug}.step`,
+          modelName: item.templateName || item.title,
+          isCommercial: true,
+          license: 'Commercial Production License (Paid CAD)',
         });
       }
     } catch (err) {
-      console.error('Failed to trigger digital STL export:', err);
+      console.error('Failed to trigger digital STEP CAD export:', err);
     }
   };
 
@@ -120,9 +125,10 @@ Licensee: ${order.customer.fullName} (${order.customer.email})
 
 Product: ${item.title}
 Product Type: ${item.productType.toUpperCase()}
-License Grant: ${item.licenseType === 'commercial' ? 'COMMERCIAL 3D PRINTING LICENSE (Unlimited physical prints permitted for sale)' : 'PERSONAL USE 3D PRINTING LICENSE (Personal non-commercial printing)'}
-Watertight 2-Manifold Guarantee: Yes
-Software: Fabify 3D Engine
+License Grant: ${item.licenseType === 'commercial' ? 'COMMERCIAL 3D PRINTING & CAD LICENSE (Full physical units selling rights + STEP CAD Solid Access)' : 'PERSONAL USE 3D PRINTING LICENSE'}
+Format: ISO-10303-21 STEP CAD Solid (.step)
+Watertight Solid B-Rep Guarantee: Yes
+Software: Fabify 3D Parametric CAD Engine
 `;
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -154,12 +160,12 @@ Software: Fabify 3D Engine
             <CheckCircle2 className="w-7 h-7" />
           </div>
 
-          <h2 className="text-xl font-bold tracking-tight">Your Digital Files Are Ready!</h2>
+          <h2 className="text-xl font-bold tracking-tight">Your CAD Solid Files Are Ready!</h2>
           <p className="text-xs text-zinc-500 mt-1">
             Order Reference: <strong className="font-mono text-zinc-900 dark:text-zinc-100">{order.orderId}</strong>
           </p>
-          <p className="text-[11px] text-zinc-400 mt-0.5">
-            Delivered to <span className="underline">{order.customer.email}</span> · Saved in My Downloads
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-300 mt-0.5">
+            STEP Models dispatched to <span className="underline font-semibold">{order.customer.email}</span> · Saved in My Downloads
           </p>
         </div>
 
@@ -175,13 +181,13 @@ Software: Fabify 3D Engine
               </div>
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-xs">Files Dispatched to Login Email</span>
+                  <span className="font-bold text-xs">STEP CAD Solid Dispatched to Email</span>
                   <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                    REAL DISPATCH
+                    STEP / CAD READY
                   </span>
                 </div>
-                <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
-                  Full package with watertight STL, STEP ISO Solid, and Commercial License Certificate sent to <strong>{order.customer.email}</strong>.
+                <p className="text-[11px] text-zinc-700 dark:text-zinc-300">
+                  Full CAD package with production <strong>ISO-10303 STEP solid model (.step)</strong> and Commercial License Certificate sent to <strong>{order.customer.email}</strong>.
                 </p>
                 {resendStatus && (
                   <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
@@ -207,11 +213,11 @@ Software: Fabify 3D Engine
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-              Download Your 3D Models (.STL)
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-950 dark:text-white">
+              Download Your Production CAD Models (.STEP)
             </span>
-            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-              Watertight 2-Manifold Slicer Ready
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold font-mono">
+              ISO 10303 CAD Solid B-Rep
             </span>
           </div>
 
@@ -236,9 +242,9 @@ Software: Fabify 3D Engine
                   )}
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-sm">{item.templateName || item.title}</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-semibold uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                        {item.licenseType}
+                      <span className="font-bold text-sm text-zinc-950 dark:text-white">{item.templateName || item.title}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-bold uppercase bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                        CAD STEP
                       </span>
                     </div>
                     {item.paramCode && (
@@ -248,8 +254,8 @@ Software: Fabify 3D Engine
                         </span>
                       </div>
                     )}
-                    <div className="text-xs text-zinc-500 mt-0.5 font-mono">
-                      Text: {item.customText || 'N/A'} · Format: Binary STL
+                    <div className="text-xs text-zinc-600 dark:text-zinc-300 mt-0.5 font-mono">
+                      Text: {item.customText || 'N/A'} · Format: <strong>ISO 10303 STEP Solid (.step)</strong>
                     </div>
                   </div>
                 </div>
@@ -257,18 +263,18 @@ Software: Fabify 3D Engine
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={() => handleDownloadItemSTL(item)}
+                    onClick={() => handleDownloadItemCAD(item)}
                     className={`py-2 px-3 rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all active:scale-95 ${
                       isLight ? 'bg-zinc-900 hover:bg-black text-white' : 'bg-white hover:bg-zinc-100 text-zinc-950'
                     }`}
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Download STL</span>
+                    <span>Download STEP (.step)</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDownloadLicense(item)}
-                    title="Download License Certificate"
+                    title="Download Commercial License Certificate"
                     className={`p-2 rounded-xl border transition-colors ${
                       isLight ? 'hover:bg-zinc-200 border-zinc-300 text-zinc-700' : 'hover:bg-zinc-800 border-zinc-700 text-zinc-300'
                     }`}
@@ -280,13 +286,13 @@ Software: Fabify 3D Engine
             ))}
           </div>
 
-          {/* Slicer Compatibility Notice */}
+          {/* CAD Solid Compatibility Tip */}
           <div className={`p-4 rounded-2xl border text-xs space-y-1.5 ${
-            isLight ? 'bg-zinc-100/60 border-zinc-200 text-zinc-600' : 'bg-zinc-900/30 border-zinc-800 text-zinc-400'
+            isLight ? 'bg-zinc-100/60 border-zinc-200 text-zinc-700' : 'bg-zinc-900/50 border-zinc-800 text-zinc-300'
           }`}>
-            <span className="font-bold text-zinc-900 dark:text-zinc-100 block">Slicer Quick Tip</span>
-            <p>
-              These STL files have zero non-manifold edges. Drag and drop them directly into Bambu Studio, OrcaSlicer, PrusaSlicer, or Cura. Recommended layer height: 0.16mm–0.20mm with 3 perimeters and 15% infill.
+            <span className="font-bold text-zinc-950 dark:text-white block">CAD & Slicer Compatibility</span>
+            <p className="leading-relaxed">
+              These <strong>STEP (.step)</strong> files are true parametric CAD solid models. Open directly in Autodesk Fusion 360, SolidWorks, FreeCAD, Rhino, or drag directly into modern slicers like Bambu Studio, OrcaSlicer, and PrusaSlicer for mathematically smooth surfaces without facet artifacts.
             </p>
           </div>
         </div>

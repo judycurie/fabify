@@ -37,6 +37,8 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
   const dimensionGroupRef = useRef<THREE.Group>(new THREE.Group());
   const bedGridRef = useRef<THREE.Group>(new THREE.Group());
   const bedMeshRef = useRef<THREE.Mesh | null>(null);
+  const gridHelperRef = useRef<THREE.GridHelper | null>(null);
+  const originAxesRef = useRef<THREE.AxesHelper | null>(null);
 
   const [activePresetView, setActivePresetView] = useState<'iso' | 'top' | 'front' | 'side'>('iso');
 
@@ -158,8 +160,8 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
     const initialBedSize = 250;
     const bedGeo = new THREE.PlaneGeometry(initialBedSize, initialBedSize);
     const bedMat = new THREE.MeshStandardMaterial({
-      color: isLight ? 0xe4e4e7 : 0x18181b,
-      roughness: 0.9,
+      color: isLight ? 0xe4e4e7 : 0x111114,
+      roughness: 0.95,
       metalness: 0.05,
     });
     const bedMesh = new THREE.Mesh(bedGeo, bedMat);
@@ -168,13 +170,37 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
     bedMeshRef.current = bedMesh;
     buildPlateGroup.add(bedMesh);
 
-    const gridMajor = new THREE.GridHelper(initialBedSize, 25, 0x71717a, isLight ? 0xd4d4d8 : 0x27272a);
+    const gridCenterColor = isLight ? 0x71717a : 0x27272a;
+    const gridLineColor = isLight ? 0xd4d4d8 : 0x18181b;
+    const gridMajor = new THREE.GridHelper(initialBedSize, 25, gridCenterColor, gridLineColor);
     gridMajor.rotation.x = Math.PI / 2;
     gridMajor.position.z = 0.01;
+    if (Array.isArray(gridMajor.material)) {
+      gridMajor.material.forEach((m) => {
+        m.transparent = true;
+        m.opacity = isLight ? 0.45 : 0.16;
+      });
+    } else {
+      gridMajor.material.transparent = true;
+      gridMajor.material.opacity = isLight ? 0.45 : 0.16;
+    }
+    gridHelperRef.current = gridMajor;
     buildPlateGroup.add(gridMajor);
 
     const originAxes = new THREE.AxesHelper(15);
     originAxes.position.set(-initialBedSize / 2 + 10, -initialBedSize / 2 + 10, 0.05);
+    if (!isLight && originAxes.material) {
+      if (Array.isArray(originAxes.material)) {
+        originAxes.material.forEach((m) => {
+          m.transparent = true;
+          m.opacity = 0.35;
+        });
+      } else {
+        originAxes.material.transparent = true;
+        originAxes.material.opacity = 0.35;
+      }
+    }
+    originAxesRef.current = originAxes;
     buildPlateGroup.add(originAxes);
 
     scene.add(buildPlateGroup);
@@ -239,7 +265,20 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
     scene.background = new THREE.Color(isLight ? 0xf4f4f5 : 0x09090b);
 
     if (bedMeshRef.current) {
-      (bedMeshRef.current.material as THREE.MeshStandardMaterial).color.set(isLight ? 0xe4e4e7 : 0x18181b);
+      (bedMeshRef.current.material as THREE.MeshStandardMaterial).color.set(isLight ? 0xe4e4e7 : 0x111114);
+    }
+
+    if (gridHelperRef.current) {
+      const mat = gridHelperRef.current.material;
+      if (Array.isArray(mat)) {
+        mat.forEach((m) => {
+          m.transparent = true;
+          m.opacity = isLight ? 0.45 : 0.16;
+        });
+      } else {
+        mat.transparent = true;
+        mat.opacity = isLight ? 0.45 : 0.16;
+      }
     }
 
     if (renderer && camera) {
@@ -646,7 +685,7 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
                   : 'bg-white text-zinc-950 shadow-sm'
                 : isLight
                 ? 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                : 'text-zinc-200 hover:text-white hover:bg-zinc-800'
             }`}
           >
             <span className="sm:hidden">{view === 'iso' ? 'Iso' : view}</span>
@@ -660,7 +699,7 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
           title="Reset Camera View"
           aria-label="Reset Camera View"
           className={`p-1.5 rounded-lg transition-colors min-h-[34px] min-w-[34px] flex items-center justify-center ${
-            isLight ? 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+            isLight ? 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100' : 'text-zinc-200 hover:text-white hover:bg-zinc-800'
           }`}
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -669,10 +708,10 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
 
       {/* Mobile Touch Gesture Tip (Discreet, disappears or quiet) */}
       <div
-        className={`absolute top-3 left-3 sm:hidden flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-lg border pointer-events-none transition-colors backdrop-blur-md opacity-80 ${
+        className={`absolute top-3 left-3 sm:hidden flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-lg border pointer-events-none transition-colors backdrop-blur-md opacity-90 ${
           isLight
-            ? 'bg-white/80 border-zinc-300 text-zinc-600'
-            : 'bg-zinc-950/80 border-zinc-800 text-zinc-400'
+            ? 'bg-white/80 border-zinc-300 text-zinc-700'
+            : 'bg-zinc-950/80 border-zinc-700 text-zinc-200'
         }`}
       >
         <span>1-finger: rotate</span>
@@ -684,8 +723,8 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
       <div
         className={`absolute bottom-4 left-4 hidden sm:flex items-center gap-2.5 text-[11px] font-mono px-3 py-1.5 rounded-lg border pointer-events-none transition-colors ${
           isLight
-            ? 'bg-white/90 border-zinc-300 text-zinc-600 shadow-sm'
-            : 'bg-zinc-950/90 border-zinc-800 text-zinc-400 shadow-black'
+            ? 'bg-white/90 border-zinc-300 text-zinc-700 shadow-sm'
+            : 'bg-zinc-950/90 border-zinc-700 text-zinc-200 shadow-black'
         }`}
       >
         <span>Rotate: Left Click</span>

@@ -31,6 +31,8 @@ export interface TagConfig {
   padding: number;           // minimal bounding box margin around text (1 to 60 mm)
   filletRadius: number;      // fillet edges radius (0.5 to 60 mm)
   edgeBevel: number;         // 0 to 5.0 mm top-edge tactile bevel
+  minBaseLength?: number;    // minimum total X dimension in mm (e.g. 100 mm for door sign plate, 25 mm for key tag)
+  maxBaseLength?: number;    // maximum total X dimension in mm (e.g. 80 mm for key tag)
 
   // Holes
   holePlacement: HolePlacement; // 'top' | 'left' | 'right' | 'both-ends' | 'none'

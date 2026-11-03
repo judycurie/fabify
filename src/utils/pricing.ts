@@ -1,16 +1,17 @@
 import { CartItem, LicenseType } from '../types/cart';
 
-export const COMMERCIAL_LICENSE_SURCHARGE = 4.00;
+export const TIER1_STATIC_PRICE = 5.00;
+export const TIER2_MONTH_PASS_PRICE = 25.00;
+export const COMMERCIAL_LICENSE_SURCHARGE = 5.00;
 
 export function calculateDigitalItemPrice(
   basePrice: number,
   licenseType: LicenseType
 ): number {
-  if (basePrice === 0) {
-    return licenseType === 'commercial' ? 3.00 : 0.00;
+  if (licenseType === 'commercial') {
+    return TIER1_STATIC_PRICE;
   }
-  const licenseDelta = licenseType === 'commercial' ? COMMERCIAL_LICENSE_SURCHARGE : 0;
-  return Math.round((basePrice + licenseDelta) * 100) / 100;
+  return 0.00;
 }
 
 export const VALID_PROMO_CODES: Record<string, { discountPercent?: number; fixedDiscount?: number; description: string }> = {

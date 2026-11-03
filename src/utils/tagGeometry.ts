@@ -202,8 +202,34 @@ export function buildTagBase2DShape(
     holes.push({ x: rightHoleX, y: 0, diameter: config.holeDiameter });
   }
 
-  const width = maxX - minX;
-  const height = maxY - minY;
+  let width = maxX - minX;
+  let height = maxY - minY;
+
+  // Enforce minimum base length (e.g. 100mm for door sign plate, 25mm for key tag)
+  if (config.minBaseLength && width < config.minBaseLength) {
+    const expand = (config.minBaseLength - width) / 2;
+    minX -= expand;
+    maxX += expand;
+    width = maxX - minX;
+
+    // Reposition holes to sit cleanly at the ends of the plate
+    if (config.holePlacement === 'both-ends' && holes.length >= 2) {
+      holes[0].x = minX + holeMargin + holeR;
+      holes[1].x = maxX - (holeMargin + holeR);
+    } else if (config.holePlacement === 'left' && holes.length >= 1) {
+      holes[0].x = minX + holeMargin + holeR;
+    } else if (config.holePlacement === 'right' && holes.length >= 1) {
+      holes[0].x = maxX - (holeMargin + holeR);
+    }
+  }
+
+  // Enforce maximum base length (e.g. 75-80mm for key tag)
+  if (config.maxBaseLength && width > config.maxBaseLength) {
+    const contract = (width - config.maxBaseLength) / 2;
+    minX += contract;
+    maxX -= contract;
+    width = maxX - minX;
+  }
 
   // Fillet radius, clamped to max possible radius
   const maxR = Math.max(0.5, Math.min(width, height) / 2 - 0.05);

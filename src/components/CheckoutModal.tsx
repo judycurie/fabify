@@ -71,7 +71,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const rawSubtotal = items.reduce((acc, i) => acc + i.totalPrice, 0);
   let subtotal = rawSubtotal;
   if (selectedTier === 'tier1_static') {
-    subtotal = Math.max(15.0, rawSubtotal);
+    subtotal = Math.max(5.0, rawSubtotal);
   } else if (selectedTier === 'tier2_subscription') {
     subtotal = 25.0;
   }
@@ -226,7 +226,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs text-zinc-500">
-                <span>Instant STL Delivery</span>
+                <span>Instant STEP / CAD Solid Delivery</span>
                 <span aria-hidden="true">·</span>
                 <span>Commercial / Personal License</span>
               </div>
@@ -292,7 +292,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               isLight ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800' : 'bg-emerald-950/20 border-emerald-900/60 text-emerald-300'
             }`}>
               <Mail className="w-4 h-4 shrink-0" />
-              <span>3D CAD files (STL, STEP solid & License Certificate) will be emailed to <strong>{customer.email || 'your email'}</strong>.</span>
+              <span>Production <strong>STEP CAD solid model (.step)</strong> and Commercial License Certificate will be emailed to <strong>{customer.email || 'your email'}</strong>.</span>
             </div>
           </div>
 
@@ -320,7 +320,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <span className="text-[10px] font-mono font-bold uppercase text-[#F26C65]">
                       Tier 1 · Commercial
                     </span>
-                    <span className="font-bold font-mono text-sm text-[#F26C65]">$15.00</span>
+                    <span className="font-bold font-mono text-sm text-[#F26C65]">$5.00</span>
                   </div>
                   <h4 className="font-bold text-xs mt-1">Static Asset Commercial License</h4>
                   <p className="text-[11px] text-zinc-500 mt-1">
@@ -331,7 +331,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   </p>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-[11px] pt-2 border-t border-zinc-200/60 dark:border-zinc-800">
-                  <span className="font-mono text-[10px] text-zinc-400">One-off fee per design</span>
+                  <span className="font-mono text-[10px] text-zinc-400">One-off fee of $5</span>
                   <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                     selectedTier === 'tier1_static' ? 'bg-[#F26C65] border-[#F26C65] text-white' : 'border-zinc-300 dark:border-zinc-700'
                   }`}>
@@ -354,20 +354,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono font-bold uppercase text-[#4B00F2] dark:text-[#855BFF]">
-                      Tier 2 · Subscription
+                      Tier 2 · 1-Month Pass
                     </span>
-                    <span className="font-bold font-mono text-sm text-[#4B00F2] dark:text-[#855BFF]">$25.00/mo</span>
+                    <span className="font-bold font-mono text-sm text-[#4B00F2] dark:text-[#855BFF]">$25.00</span>
                   </div>
-                  <h4 className="font-bold text-xs mt-1">Commercial Subscription / Tool Access</h4>
+                  <h4 className="font-bold text-xs mt-1">1-Month Configurator Tool Access</h4>
                   <p className="text-[11px] text-zinc-500 mt-1">
-                    <strong>Access Scope:</strong> Continuous access to the live configurator, batch exporting, and seed tweaking.
+                    <strong>Access Scope:</strong> Continuous access to live configurator, batch exporting, and seed tweaking.
                   </p>
                   <p className="text-[10px] text-zinc-400 mt-1">
-                    <strong>Best For:</strong> Active commercial shops, Print-on-Demand (POD) businesses, and custom-order fabricators.
+                    <strong>No Subscription:</strong> Payment of $25 works for the month, no recurring renewal.
                   </p>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-[11px] pt-2 border-t border-zinc-200/60 dark:border-zinc-800">
-                  <span className="font-mono text-[10px] text-zinc-400">Recurring monthly access</span>
+                  <span className="font-mono text-[10px] text-zinc-400">30 days full tool access</span>
                   <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                     selectedTier === 'tier2_subscription' ? 'bg-[#4B00F2] border-[#4B00F2] text-white' : 'border-zinc-300 dark:border-zinc-700'
                   }`}>

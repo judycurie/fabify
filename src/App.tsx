@@ -23,6 +23,7 @@ import { loadHelveticaFont } from './utils/fontLoader';
 import { generateTagModel, GeneratedTagModel } from './utils/tagGeometry';
 import { generateBoxModel } from './utils/boxGeometry';
 import { exportSTL, exportMultiPartSTL, getSafeFilename, fireExportConfetti } from './utils/stlExporter';
+import { exportSTEP } from './utils/stepExporter';
 import { getSavedCart, saveCartToStorage, isTemplatePurchased, createNewDigitalOrder } from './utils/orders';
 import { VALID_PROMO_CODES, calculateDigitalItemPrice } from './utils/pricing';
 import { UserProfile } from './types/auth';
@@ -252,10 +253,14 @@ export default function App() {
     }
   };
 
-  // Trigger Purchase / Checkout flow for the current customized model
-  const handlePurchaseCurrentTemplate = () => {
+  // Trigger Purchase / Checkout flow for the current customized model on 2 tiers ($5 static, $25 month pass)
+  const handlePurchaseCurrentTemplate = (tierId: 'tier1_static' | 'tier2_subscription' = 'tier1_static') => {
     const isBox = activeConfigurator === 'box';
-    const basePrice = activeTemplate.price > 0 ? activeTemplate.price : (isBox ? 3.50 : 2.99);
+    const isTier2 = tierId === 'tier2_subscription';
+    const basePrice = isTier2 ? 25.00 : 5.00;
+    const tierName = isTier2 
+      ? 'Tier 2: 1-Month Configurator Tool Access ($25/mo)' 
+      : 'Tier 1: Static Model Commercial License ($5)';
 
     const customText = isBox
       ? (boxConfig.labelText || 'ORGANIZER')
@@ -267,13 +272,15 @@ export default function App() {
     const newItem: CartItem = {
       id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       productType: isBox ? 'box' : 'tag',
-      title: templateName,
+      title: `${templateName} (${isTier2 ? '$25 Month Pass' : '$5 Commercial'})`,
       templateName,
       paramCode,
       isFree: false,
       unitPrice: basePrice,
       totalPrice: basePrice,
-      licenseType: 'personal',
+      licenseType: 'commercial',
+      tierId,
+      tierName,
       customText,
       boxConfig: isBox ? { ...boxConfig } : undefined,
       tagConfig: !isBox ? { ...tagConfig } : undefined,
@@ -314,13 +321,8 @@ export default function App() {
     return true;
   };
 
-  // Export Tag STL - Gated against unpaid templates and requires login for free download
+  // Export Tag STL - All templates allow free STL download with login verification
   const handleExportTagSTL = (binary: boolean) => {
-    if (!activeTemplate.isFree && !isCurrentTemplatePurchased) {
-      handlePurchaseCurrentTemplate();
-      return;
-    }
-
     if (!requireAuthForFreeDownload(() => handleExportTagSTL(binary))) {
       return;
     }
@@ -351,11 +353,6 @@ export default function App() {
   };
 
   const handleExportTagMultiPart = () => {
-    if (!activeTemplate.isFree && !isCurrentTemplatePurchased) {
-      handlePurchaseCurrentTemplate();
-      return;
-    }
-
     if (!requireAuthForFreeDownload(() => handleExportTagMultiPart())) {
       return;
     }
@@ -383,13 +380,8 @@ export default function App() {
     }
   };
 
-  // Export Box STL - Gated against unpaid templates and requires login for free download
+  // Export Box STL - All templates allow free STL download with login verification
   const handleExportBoxSTL = (binary: boolean) => {
-    if (!activeTemplate.isFree && !isCurrentTemplatePurchased) {
-      handlePurchaseCurrentTemplate();
-      return;
-    }
-
     if (!requireAuthForFreeDownload(() => handleExportBoxSTL(binary))) {
       return;
     }
@@ -416,6 +408,35 @@ export default function App() {
         setEmailToastMessage(`3D container model dispatched to ${currentUser.email}`);
         setTimeout(() => setEmailToastMessage(''), 4500);
       }).catch(() => {});
+    }
+  };
+
+  // Export Production STEP CAD Solid for purchased commercial model
+  const handleExportSTEP = () => {
+    const isBox = activeConfigurator === 'box';
+    if (isBox) {
+      const active = currentBoxModelRef.current;
+      if (!active) return;
+      const slug = (boxConfig.labelText || 'Organizer').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+      exportSTEP(active.exportGeometry, {
+        filename: `Fabify_CAD_${slug}.step`,
+        modelName: activeTemplate.name || 'Desk Organizer',
+        isCommercial: true,
+        license: 'Commercial Production License (Paid CAD)',
+      });
+      fireExportConfetti();
+    } else {
+      const active = currentTagModelRef.current;
+      if (!active) return;
+      const line1 = tagConfig.text ? tagConfig.text.trim().replace(/[^a-zA-Z0-9_-]/g, '_') : 'Tag';
+      const line2 = tagConfig.hasSecondLine && tagConfig.textLine2 ? `_${tagConfig.textLine2.trim().replace(/[^a-zA-Z0-9_-]/g, '_')}` : '';
+      exportSTEP(active.exportGeometry, {
+        filename: `Fabify_CAD_${line1}${line2}.step`,
+        modelName: activeTemplate.name || 'Parametric Plate',
+        isCommercial: true,
+        license: 'Commercial Production License (Paid CAD)',
+      });
+      fireExportConfetti();
     }
   };
 
@@ -519,12 +540,21 @@ export default function App() {
     }
   };
 
-  const handleAddToCartPreset = (type: 'tag' | 'box', preset: TagPreset | BoxPreset) => {
+  const handleAddToCartPreset = (
+    type: 'tag' | 'box', 
+    preset: TagPreset | BoxPreset,
+    tierId: 'tier1_static' | 'tier2_subscription' = 'tier1_static'
+  ) => {
     const isBox = type === 'box';
     const boxP = preset as BoxPreset;
     const tagP = preset as TagPreset;
 
-    const basePrice = isBox ? boxP.digitalPrice : (tagP.digitalPrice ?? 2.99);
+    const isTier2 = tierId === 'tier2_subscription';
+    const basePrice = isTier2 ? 25.00 : 5.00;
+    const tierName = isTier2 
+      ? 'Tier 2: 1-Month Configurator Tool Access ($25/mo)' 
+      : 'Tier 1: Static Model Commercial License ($5)';
+
     const resolvedBoxConfig = isBox ? { ...DEFAULT_BOX_CONFIG, ...boxP.config } : undefined;
     const resolvedTagConfig = !isBox ? { ...DEFAULT_TAG_CONFIG, ...tagP.config } : undefined;
     const paramCode = isBox 
@@ -534,14 +564,16 @@ export default function App() {
     const newItem: CartItem = {
       id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       productType: type,
-      title: preset.name,
+      title: `${preset.name} (${isTier2 ? '$25 Month Pass' : '$5 Commercial'})`,
       templateName: preset.name,
       paramCode,
       image: preset.image,
-      isFree: isBox ? boxP.isFree : (tagP.isFree ?? false),
+      isFree: false,
       unitPrice: basePrice,
       totalPrice: basePrice,
-      licenseType: 'personal',
+      licenseType: 'commercial',
+      tierId,
+      tierName,
       customText: isBox ? (boxP.config.labelText || 'ORGANIZER') : (tagP.config.text || 'TAG'),
       boxConfig: resolvedBoxConfig,
       tagConfig: resolvedTagConfig,
@@ -614,22 +646,9 @@ export default function App() {
                 }`}>
                   <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Template:</span>
                   <span className="font-bold">{activeTemplate.name}</span>
-                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-white shadow-sm inline-flex items-center gap-1 ${
-                    activeTemplate.isFree
-                      ? 'bg-[#4B00F2]'
-                      : 'bg-[#F26C65]'
-                  }`}>
-                    {activeTemplate.isFree ? (
-                      <>
-                        <Download className="w-3 h-3 text-white" />
-                        <span>FREE STL</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-3 h-3 text-white" />
-                        <span>${activeTemplate.price.toFixed(2)} CAD</span>
-                      </>
-                    )}
+                  <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold shadow-sm inline-flex items-center gap-1 bg-zinc-900 text-white dark:bg-white dark:text-zinc-950">
+                    <Download className="w-3 h-3 text-[#4B00F2]" />
+                    <span>FREE STL + $5 COMMERCIAL</span>
                   </span>
                 </div>
 
@@ -672,6 +691,7 @@ export default function App() {
                 onUpdateBoxConfig={handleUpdateBoxConfig}
                 onExportBoxSTL={handleExportBoxSTL}
                 onPurchaseTemplate={handlePurchaseCurrentTemplate}
+                onExportSTEP={handleExportSTEP}
               />
             </div>
 
@@ -791,9 +811,9 @@ export default function App() {
           theme={theme}
           onSelectTier={(tierId) => {
             if (tierId === 'tier2_subscription') {
-              handlePurchaseCurrentTemplate();
+              handlePurchaseCurrentTemplate('tier2_subscription');
             } else if (tierId === 'tier1_static') {
-              handlePurchaseCurrentTemplate();
+              handlePurchaseCurrentTemplate('tier1_static');
             }
           }}
         />

@@ -104,7 +104,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         <div className={`px-4 py-2.5 border-b text-xs flex items-center gap-2 ${isLight ? 'bg-zinc-100/70 border-zinc-200' : 'bg-zinc-900/60 border-zinc-800'}`}>
           <ShieldCheck className="w-4 h-4 text-[#F26C65] shrink-0" />
           <span className="text-zinc-600 dark:text-zinc-400">
-            Instant .STL download delivery right after confirmation.
+            Instant Production STEP CAD solid & license delivery after confirmation.
           </span>
         </div>
 
@@ -161,8 +161,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           <h4 className="font-bold text-sm tracking-tight truncate">
                             {item.templateName || item.title}
                           </h4>
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-                            STL
+                          <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase ${
+                            isCommercial
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                              : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
+                          }`}>
+                            {isCommercial ? 'STEP CAD' : 'STL'}
                           </span>
                         </div>
 
@@ -205,7 +209,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           : isLight ? 'border-zinc-300 text-zinc-700 bg-white hover:border-[#F26C65]/60' : 'border-zinc-700 text-zinc-300 bg-zinc-900 hover:border-[#F26C65]/60'
                       }`}
                     >
-                      {isCommercial ? '✓ Commercial License ($4)' : 'Personal License (+Commercial $4)'}
+                      {item.tierId === 'tier2_subscription'
+                        ? '✓ 1-Month Tool Access ($25)'
+                        : isCommercial 
+                        ? '✓ Commercial License ($5)' 
+                        : 'Personal License (+Commercial $5)'}
                     </button>
 
                     <span className={`font-bold font-mono text-sm ${item.totalPrice > 0 ? 'text-[#F26C65]' : 'text-[#4B00F2]'}`}>

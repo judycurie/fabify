@@ -27,7 +27,7 @@ export const FoundationFootnote: React.FC<FoundationFootnoteProps> = ({
         className={`w-full py-1 sm:py-2 px-2.5 sm:px-4 text-[9px] sm:text-xs select-none border-t transition-colors shrink-0 ${
           isLight
             ? 'bg-white/95 border-zinc-200/80 text-zinc-700 backdrop-blur-md'
-            : 'bg-zinc-950/95 border-zinc-800/80 text-zinc-400 backdrop-blur-md'
+            : 'bg-zinc-950/95 border-zinc-800/80 text-zinc-300 backdrop-blur-md'
         } ${className}`}
       >
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1 sm:gap-3 text-center sm:text-left">
@@ -44,7 +44,7 @@ export const FoundationFootnote: React.FC<FoundationFootnoteProps> = ({
               <span className={`font-black text-[9.5px] sm:text-[11px] tracking-tight leading-tight ${isLight ? 'text-zinc-900' : 'text-zinc-100'}`}>
                 FAB FOUNDATION POLAND <span className="text-[#4B00F2] font-extrabold text-[8.5px] sm:text-[10px]">(FFP)</span>
               </span>
-              <span className="hidden xs:block text-[7.5px] sm:text-[9px] text-zinc-500 uppercase tracking-wider font-semibold leading-tight">
+              <span className="hidden xs:block text-[7.5px] sm:text-[9px] text-zinc-500 dark:text-zinc-300 uppercase tracking-wider font-semibold leading-tight">
                 Computational Design & Digital Fabrication
               </span>
             </div>

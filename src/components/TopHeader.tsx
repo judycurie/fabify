@@ -185,7 +185,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 Fabify CAD
               </span>
             </div>
-            <span className="text-[10px] text-zinc-500 font-medium tracking-tight whitespace-nowrap hidden sm:block">
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-300 font-medium tracking-tight whitespace-nowrap hidden sm:block">
               Powered by Fab Foundation Poland (FFP)
             </span>
           </div>
@@ -217,13 +217,31 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                       : 'bg-zinc-900 text-white font-bold'
                     : isLight
                     ? 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900/50'
+                    : 'text-zinc-300 hover:text-white hover:bg-zinc-900/50'
                 }`}
               >
                 <span>{link.label}</span>
               </button>
             );
           })}
+
+          {/* Licensing Tiers with explanation popup / modal trigger */}
+          <button
+            type="button"
+            onClick={onOpenTiersModal}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
+              isLight
+                ? 'text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100'
+                : 'text-zinc-300 hover:text-white hover:bg-zinc-900'
+            }`}
+            title="Licensing Tiers: $5 Static CAD License & $25/mo Configurator Access (no subscription)"
+          >
+            <Crown className="w-3.5 h-3.5 text-amber-500" />
+            <span>Licensing Tiers</span>
+            <span className="text-[9.5px] font-mono px-1.5 py-0.2 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold border border-zinc-300 dark:border-zinc-700">
+              $5 / $25 mo
+            </span>
+          </button>
         </nav>
       </div>
 
@@ -678,6 +696,25 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                     {link.label}
                   </button>
                 ))}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    onOpenTiersModal?.();
+                  }}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-between ${
+                    isLight ? 'hover:bg-zinc-100 text-zinc-900' : 'hover:bg-zinc-900 text-zinc-100'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-amber-500" />
+                    <span>Licensing Tiers</span>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                    $5 / $25 mo
+                  </span>
+                </button>
               </div>
             </div>
 

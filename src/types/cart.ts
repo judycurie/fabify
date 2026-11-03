@@ -1,5 +1,6 @@
 import { TagConfig, TagDimensions } from './tag';
 import { BoxConfig, BoxDimensions } from './box';
+import { ModelTierId } from './tiers';
 
 export type ProductType = 'tag' | 'box';
 export type LicenseType = 'personal' | 'commercial';
@@ -15,6 +16,8 @@ export interface CartItem {
   unitPrice: number;
   totalPrice: number;
   licenseType: LicenseType;
+  tierId?: ModelTierId;
+  tierName?: string;
   tagConfig?: TagConfig;
   boxConfig?: BoxConfig;
   dimensions?: TagDimensions | null;

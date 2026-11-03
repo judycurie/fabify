@@ -146,7 +146,9 @@ const server = http.createServer((req, res) => {
           return;
         }
 
-        console.log(`[Fabify Production Mailer] Sent 3D files to ${recipientEmail} for template: ${templateName}`);
+        const isPaid = tierId !== 'free';
+        const formatName = isPaid ? 'Production STEP CAD model (.step)' : 'Free 3D STL model (.stl)';
+        console.log(`[Fabify Production Mailer] Sent ${formatName} to ${recipientEmail} for template: ${templateName}`);
 
         res.writeHead(200);
         res.end(
@@ -155,9 +157,10 @@ const server = http.createServer((req, res) => {
             deliveredTo: recipientEmail,
             recipientName,
             orderId,
+            format: isPaid ? 'STEP (.step)' : 'STL (.stl)',
             messageId: `prod_mail_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
             timestamp: Date.now(),
-            deliveryNotice: `3D CAD models and license package dispatched to ${recipientEmail}`,
+            deliveryNotice: `${formatName} and license package dispatched to ${recipientEmail}`,
           })
         );
       } catch (err) {

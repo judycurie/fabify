@@ -321,24 +321,46 @@ License Grant: ${item.licenseType === 'commercial' ? 'COMMERCIAL 3D PRINTING LIC
                   <div className={`p-3 rounded-2xl border text-xs font-mono my-2 ${
                     isLight ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-950 border-zinc-800'
                   }`}>
-                    <div className="text-zinc-500 text-[10px] uppercase">Custom Identifier</div>
+                    <div className="flex items-center justify-between text-[10px] text-zinc-500 uppercase">
+                      <span>Custom Identifier</span>
+                      <span className="font-bold text-zinc-800 dark:text-zinc-200">
+                        {item.licenseType === 'commercial' || !item.isFree ? 'ISO STEP Solid (.step)' : 'STL Mesh (.stl)'}
+                      </span>
+                    </div>
                     <div className="font-bold text-sm truncate mt-0.5">{item.customText || 'N/A'}</div>
                   </div>
                 </div>
 
                 <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      disabled={downloadingItemId === item.id}
-                      onClick={() => handleDownloadSTL(item)}
-                      className={`py-2 px-3 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
-                        isLight ? 'bg-zinc-900 hover:bg-black text-white' : 'bg-white hover:bg-zinc-100 text-zinc-950'
-                      }`}
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>{downloadingItemId === item.id ? 'Generating...' : 'Download STL'}</span>
-                    </button>
+                    {/* For paid commercial items: Download STEP/CAD model. For free items: Download STL */}
+                    {item.licenseType === 'commercial' || !item.isFree ? (
+                      <button
+                        type="button"
+                        disabled={downloadingItemId === item.id}
+                        onClick={() => handleDownloadSTEP(item)}
+                        className={`py-2 px-3 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+                          isLight ? 'bg-zinc-900 hover:bg-black text-white' : 'bg-white hover:bg-zinc-100 text-zinc-950'
+                        }`}
+                        title="Download Production ISO-10303 STEP CAD Solid"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>{downloadingItemId === item.id ? 'Generating STEP...' : 'Download STEP (.step)'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={downloadingItemId === item.id}
+                        onClick={() => handleDownloadSTL(item)}
+                        className={`py-2 px-3 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+                          isLight ? 'bg-zinc-900 hover:bg-black text-white' : 'bg-white hover:bg-zinc-100 text-zinc-950'
+                        }`}
+                        title="Download Free STL 3D Mesh"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>{downloadingItemId === item.id ? 'Generating...' : 'Download STL'}</span>
+                      </button>
+                    )}
 
                     <button
                       type="button"
