@@ -1,0 +1,280 @@
+{
+  "productSlug": "desk-organizer-box",
+  "displayName": "Modular Desk Organizer & Tray Forge",
+  "parameters": [
+    {
+      "id": "p1",
+      "key": "width",
+      "label": "Length (X)",
+      "type": "slider",
+      "min": 40,
+      "max": 260,
+      "step": 5,
+      "options": [],
+      "unit": "mm",
+      "default": 120
+    },
+    {
+      "id": "p2",
+      "key": "depth",
+      "label": "Depth (Y)",
+      "type": "slider",
+      "min": 40,
+      "max": 200,
+      "step": 5,
+      "options": [],
+      "unit": "mm",
+      "default": 80
+    },
+    {
+      "id": "p3",
+      "key": "height",
+      "label": "Height (Z)",
+      "type": "slider",
+      "min": 18,
+      "max": 120,
+      "step": 5,
+      "options": [],
+      "unit": "mm",
+      "default": 45
+    },
+    {
+      "id": "p4",
+      "key": "wallThickness",
+      "label": "Wall Thickness",
+      "type": "slider",
+      "min": 1.2,
+      "max": 6.0,
+      "step": 0.2,
+      "options": [],
+      "unit": "mm",
+      "default": 2.4
+    },
+    {
+      "id": "p5",
+      "key": "floorThickness",
+      "label": "Floor Thickness",
+      "type": "slider",
+      "min": 1.2,
+      "max": 8.0,
+      "step": 0.2,
+      "options": [],
+      "unit": "mm",
+      "default": 2.4
+    },
+    {
+      "id": "p6",
+      "key": "filletRadius",
+      "label": "Outer Corner Fillet",
+      "type": "slider",
+      "min": 1.0,
+      "max": 15.0,
+      "step": 0.5,
+      "options": [],
+      "unit": "mm",
+      "default": 5.0
+    },
+    {
+      "id": "p7",
+      "key": "edgeBevel",
+      "label": "Top Edge Bevel",
+      "type": "slider",
+      "min": 0,
+      "max": 3.0,
+      "step": 0.1,
+      "options": [],
+      "unit": "mm",
+      "default": 0.6
+    },
+    {
+      "id": "p8",
+      "key": "gridColumns",
+      "label": "Grid Columns",
+      "type": "slider",
+      "min": 1,
+      "max": 6,
+      "step": 1,
+      "options": [],
+      "unit": "none",
+      "default": 2
+    },
+    {
+      "id": "p9",
+      "key": "gridRows",
+      "label": "Grid Rows",
+      "type": "slider",
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "options": [],
+      "unit": "none",
+      "default": 2
+    },
+    {
+      "id": "p10",
+      "key": "dividerThickness",
+      "label": "Divider Thickness",
+      "type": "slider",
+      "min": 1.0,
+      "max": 4.0,
+      "step": 0.2,
+      "options": [],
+      "unit": "mm",
+      "default": 1.8
+    },
+    {
+      "id": "p11",
+      "key": "dividerHeightPercent",
+      "label": "Divider Height Percent",
+      "type": "slider",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "options": [],
+      "unit": "none",
+      "default": 100
+    },
+    {
+      "id": "p12",
+      "key": "hasScoop",
+      "label": "Finger Scoops",
+      "type": "boolean",
+      "min": 0,
+      "max": 1,
+      "step": 1,
+      "options": [],
+      "unit": "none",
+      "default": true
+    },
+    {
+      "id": "p13",
+      "key": "scoopRadius",
+      "label": "Scoop Radius",
+      "type": "slider",
+      "min": 2.0,
+      "max": 15.0,
+      "step": 0.5,
+      "options": [],
+      "unit": "mm",
+      "default": 6.0
+    },
+    {
+      "id": "p14",
+      "key": "hasStackingLip",
+      "label": "Stacking Lip",
+      "type": "boolean",
+      "min": 0,
+      "max": 1,
+      "step": 1,
+      "options": [],
+      "unit": "none",
+      "default": false
+    },
+    {
+      "id": "p15",
+      "key": "stackingLipHeight",
+      "label": "Stacking Lip Height",
+      "type": "slider",
+      "min": 2.0,
+      "max": 6.0,
+      "step": 0.5,
+      "options": [],
+      "unit": "mm",
+      "default": 3.0
+    },
+    {
+      "id": "p16",
+      "key": "hasLabel",
+      "label": "Front Face Label",
+      "type": "boolean",
+      "min": 0,
+      "max": 1,
+      "step": 1,
+      "options": [],
+      "unit": "none",
+      "default": true
+    },
+    {
+      "id": "p17",
+      "key": "labelText",
+      "label": "Label Text",
+      "type": "text",
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "options": [],
+      "unit": "none",
+      "default": "ORGANIZER"
+    },
+    {
+      "id": "p18",
+      "key": "labelFontSize",
+      "label": "Label Font Size",
+      "type": "slider",
+      "min": 4.0,
+      "max": 16.0,
+      "step": 0.5,
+      "options": [],
+      "unit": "mm",
+      "default": 7.0
+    },
+    {
+      "id": "p19",
+      "key": "labelStyle",
+      "label": "Label Style",
+      "type": "select",
+      "min": 0,
+      "max": 1,
+      "step": 1,
+      "options": ["embossed", "debossed"],
+      "unit": "none",
+      "default": "embossed"
+    },
+    {
+      "id": "p20",
+      "key": "labelRelief",
+      "label": "Label Relief Depth",
+      "type": "slider",
+      "min": 0.6,
+      "max": 2.0,
+      "step": 0.1,
+      "options": [],
+      "unit": "mm",
+      "default": 1.0
+    },
+    {
+      "id": "p21",
+      "key": "textPosition",
+      "label": "Label Position",
+      "type": "select",
+      "min": 0,
+      "max": 4,
+      "step": 1,
+      "options": ["front_center", "front_left", "front_right", "front_top", "front_bottom"],
+      "unit": "none",
+      "default": "front_center"
+    },
+    {
+      "id": "p22",
+      "key": "textVerticalOffset",
+      "label": "Label Vertical Offset",
+      "type": "slider",
+      "min": -15.0,
+      "max": 15.0,
+      "step": 0.5,
+      "options": [],
+      "unit": "mm",
+      "default": 0
+    }
+  ],
+  "tiers": {
+    "personal": {
+      "formats": ["STL", "3MF"],
+      "licenseFile": "license_personal.txt"
+    },
+    "merchant": {
+      "formats": ["STL", "3MF", "STEP"],
+      "licenseFile": "license_commercial.txt"
+    }
+  }
+}

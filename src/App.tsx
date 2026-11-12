@@ -43,6 +43,7 @@ import { MyDownloadsView } from './components/MyDownloadsView';
 import { AuthModal } from './components/AuthModal';
 import { ModelTiersModal } from './components/ModelTiersModal';
 import { FoundationFootnote } from './components/FoundationFootnote';
+import { CartridgeExporterPanel } from './components/CartridgeExporterPanel';
 import { sendModelEmail } from './utils/emailModelService';
 import { Sparkles, ArrowRight, Lock, Download, ShoppingBag, Mail, CheckCircle2 } from 'lucide-react';
 
@@ -830,6 +831,8 @@ export default function App() {
             </div>
           </div>
         )}
+        {/* Temporary Corner Panel: Export All Product Cartridges */}
+        <CartridgeExporterPanel theme={theme} />
       </main>
     </div>
   );
