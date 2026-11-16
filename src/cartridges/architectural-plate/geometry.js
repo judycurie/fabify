@@ -203,6 +203,53 @@ function translateCommands(commands, dx, dy) {
   });
 }
 
+const FALLBACK_GLYPHS_5X7 = {
+  A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+  B: ['11110', '10001', '10001', '11110', '10001', '10001', '11110'],
+  C: ['01111', '10000', '10000', '10000', '10000', '10000', '01111'],
+  D: ['11110', '10001', '10001', '10001', '10001', '10001', '11110'],
+  E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+  F: ['11111', '10000', '10000', '11110', '10000', '10000', '10000'],
+  G: ['01111', '10000', '10000', '10111', '10001', '10001', '01111'],
+  H: ['10001', '10001', '10001', '11111', '10001', '10001', '10001'],
+  I: ['11111', '00100', '00100', '00100', '00100', '00100', '11111'],
+  J: ['00111', '00010', '00010', '00010', '10010', '10010', '01100'],
+  K: ['10001', '10010', '10100', '11000', '10100', '10010', '10001'],
+  L: ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
+  M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+  N: ['10001', '11001', '10101', '10011', '10001', '10001', '10001'],
+  O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+  P: ['11110', '10001', '10001', '11110', '10000', '10000', '10000'],
+  Q: ['01110', '10001', '10001', '10001', '10101', '10010', '01101'],
+  R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
+  S: ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
+  T: ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
+  U: ['10001', '10001', '10001', '10001', '10001', '10001', '01110'],
+  V: ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+  W: ['10001', '10001', '10001', '10101', '10101', '11011', '10001'],
+  X: ['10001', '10001', '01010', '00100', '01010', '10001', '10001'],
+  Y: ['10001', '10001', '01010', '00100', '00100', '00100', '00100'],
+  Z: ['11111', '00001', '00010', '00100', '01000', '10000', '11111'],
+  0: ['01110', '10011', '10101', '10101', '11001', '10001', '01110'],
+  1: ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
+  2: ['01110', '10001', '00001', '00110', '01000', '10000', '11111'],
+  3: ['11110', '00001', '00001', '01110', '00001', '00001', '11110'],
+  4: ['00010', '00110', '01010', '10010', '11111', '00010', '00010'],
+  5: ['11111', '10000', '11110', '00001', '00001', '10001', '01110'],
+  6: ['01110', '10000', '10000', '11110', '10001', '10001', '01110'],
+  7: ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
+  8: ['01110', '10001', '10001', '01110', '10001', '10001', '01110'],
+  9: ['01110', '10001', '10001', '01111', '00001', '00001', '01110'],
+  '-': ['00000', '00000', '00000', '11111', '00000', '00000', '00000'],
+  '.': ['00000', '00000', '00000', '00000', '00000', '01100', '01100'],
+  '/': ['00001', '00010', '00010', '00100', '01000', '01000', '10000'],
+  ':': ['00000', '01100', '01100', '00000', '01100', '01100', '00000'],
+  '·': ['00000', '00000', '00000', '00100', '00000', '00000', '00000'],
+  '&': ['01100', '10010', '10100', '01000', '10101', '10010', '01101'],
+  '+': ['00000', '00100', '00100', '11111', '00100', '00100', '00000'],
+  ' ': ['00000', '00000', '00000', '00000', '00000', '00000', '00000'],
+};
+
 function getLineCommandsAndBounds(font, text, fontSize, letterSpacing) {
   const commands = [];
   let cursorX = 0;
@@ -211,25 +258,61 @@ function getLineCommandsAndBounds(font, text, fontSize, letterSpacing) {
   let minY = Infinity;
   let maxY = -Infinity;
 
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const glyph = font.charToGlyph(char);
-    const glyphPath = glyph.getPath(cursorX, 0, fontSize);
+  if (font) {
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const glyph = font.charToGlyph(char);
+      const glyphPath = glyph.getPath(cursorX, 0, fontSize);
 
-    for (const cmd of glyphPath.commands) {
-      commands.push(cmd);
-      if ('x' in cmd && typeof cmd.x === 'number') {
-        const x = cmd.x;
-        const y = -cmd.y;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
+      for (const cmd of glyphPath.commands) {
+        commands.push(cmd);
+        if ('x' in cmd && typeof cmd.x === 'number') {
+          const x = cmd.x;
+          const y = -cmd.y;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
       }
-    }
 
-    const glyphAdvance = (glyph.advanceWidth ? glyph.advanceWidth / font.unitsPerEm : 0.6) * fontSize;
-    cursorX += glyphAdvance + letterSpacing;
+      const glyphAdvance = (glyph.advanceWidth ? glyph.advanceWidth / font.unitsPerEm : 0.6) * fontSize;
+      cursorX += glyphAdvance + letterSpacing;
+    }
+  } else {
+    const capHeight = fontSize * 0.72;
+    const cellH = capHeight / 7;
+    const cellW = (fontSize * 0.52) / 5;
+    const padX = cellW * 0.08;
+    const padY = cellH * 0.08;
+    const advance = cellW * 5.8;
+
+    for (let i = 0; i < text.length; i++) {
+      const key = text[i].toUpperCase();
+      const bitmap = FALLBACK_GLYPHS_5X7[key] || FALLBACK_GLYPHS_5X7[' '];
+      for (let r = 0; r < 7; r++) {
+        for (let c = 0; c < 5; c++) {
+          if (bitmap[r][c] === '1') {
+            const x0 = cursorX + c * cellW + padX;
+            const x1 = cursorX + (c + 1) * cellW - padX;
+            const yTop = -(capHeight - r * cellH - padY);
+            const yBot = -(capHeight - (r + 1) * cellH + padY);
+            commands.push({ type: 'M', x: x0, y: yBot });
+            commands.push({ type: 'L', x: x1, y: yBot });
+            commands.push({ type: 'L', x: x1, y: yTop });
+            commands.push({ type: 'L', x: x0, y: yTop });
+            commands.push({ type: 'Z' });
+            const uyBot = -yBot;
+            const uyTop = -yTop;
+            if (x0 < minX) minX = x0;
+            if (x1 > maxX) maxX = x1;
+            if (uyBot < minY) minY = uyBot;
+            if (uyTop > maxY) maxY = uyTop;
+          }
+        }
+      }
+      cursorX += advance + letterSpacing;
+    }
   }
 
   if (!Number.isFinite(minX)) {
@@ -258,7 +341,7 @@ function generateMultiLineTextShapes(THREE, font, opts) {
   const t2 = hasLine2 ? opts.text2.trim() : '';
   const lSpacing = opts.letterSpacing || 0;
 
-  if (!font || (t1.length === 0 && (!hasLine2 || t2.length === 0))) {
+  if (t1.length === 0 && (!hasLine2 || t2.length === 0)) {
     return {
       shapes: [],
       holeIslands: [],
@@ -553,33 +636,102 @@ function analyzeMeshWatertightness(THREE, geometry) {
   };
 }
 
+async function resolveFont(cadKernel, fontVariant) {
+  if (cadKernel?.font) return cadKernel.font;
+  if (cadKernel?.fonts && cadKernel.fonts[fontVariant]) return cadKernel.fonts[fontVariant];
+  if (typeof cadKernel?.loadFont === 'function') {
+    try {
+      return await cadKernel.loadFont(fontVariant);
+    } catch {
+      return null;
+    }
+  }
+  if (cadKernel?.opentype?.parse && typeof fetch === 'function') {
+    try {
+      const filename = fontVariant === 'regular' ? 'Helvetica-Regular.ttf' : 'Helvetica-Bold.ttf';
+      const baseUrl = cadKernel?.fontBaseUrl || '/fonts';
+      const res = await fetch(`${baseUrl}/${filename}`);
+      if (res.ok) {
+        return cadKernel.opentype.parse(await res.arrayBuffer());
+      }
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function geometryToPartBuffers(geometry) {
+  if (!geometry || !geometry.attributes || !geometry.attributes.position) {
+    return {
+      vertices: new Float32Array(0),
+      indices: new Uint32Array(0),
+    };
+  }
+
+  const posAttr = geometry.attributes.position;
+  const count = posAttr.count;
+  const vertices = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    vertices[i * 3] = posAttr.getX(i);
+    vertices[i * 3 + 1] = posAttr.getY(i);
+    vertices[i * 3 + 2] = posAttr.getZ(i);
+  }
+
+  let indices;
+  if (geometry.index) {
+    const idxAttr = geometry.index;
+    indices = new Uint32Array(idxAttr.count);
+    for (let i = 0; i < idxAttr.count; i++) {
+      indices[i] = idxAttr.getX(i);
+    }
+  } else {
+    indices = new Uint32Array(count);
+    for (let i = 0; i < count; i++) {
+      indices[i] = i;
+    }
+  }
+
+  return { vertices, indices };
+}
+
 /**
  * Pure standalone 3D geometry generator for Architectural Plates & Stencil Signs.
  * @param {Object} params - { p1..p27 } mapped from schema.json
- * @param {Object} cadKernel - { THREE, Evaluator, Brush, ADDITION, SUBTRACTION, font }
+ * @param {Object} cadKernel - { THREE, Evaluator, Brush, ADDITION, SUBTRACTION, font, opentype }
  */
-export function generateModel(params, cadKernel) {
+export async function generateModel(params, cadKernel) {
   const THREE = cadKernel?.THREE;
   if (!THREE) {
     throw new Error('cadKernel.THREE is required to generate architectural-plate geometry.');
   }
 
-  const Evaluator = cadKernel?.Evaluator || cadKernel?.csg?.Evaluator;
-  const Brush = cadKernel?.Brush || cadKernel?.csg?.Brush;
-  const ADDITION = cadKernel?.ADDITION ?? cadKernel?.csg?.ADDITION ?? 0;
-  const SUBTRACTION = cadKernel?.SUBTRACTION ?? cadKernel?.csg?.SUBTRACTION ?? 1;
-  const font = cadKernel?.font || null;
+  const toBool = (val, fallback) => {
+    if (typeof val === 'boolean') return val;
+    if (val === 'true' || val === 1 || val === '1') return true;
+    if (val === 'false' || val === 0 || val === '0') return false;
+    return fallback;
+  };
+
+  const Evaluator = cadKernel?.Evaluator || cadKernel?.csg?.Evaluator || cadKernel?.CSG?.Evaluator;
+  const Brush = cadKernel?.Brush || cadKernel?.csg?.Brush || cadKernel?.CSG?.Brush;
+  const ADDITION = cadKernel?.ADDITION ?? cadKernel?.csg?.ADDITION ?? cadKernel?.CSG?.ADDITION ?? 0;
+  const SUBTRACTION = cadKernel?.SUBTRACTION ?? cadKernel?.csg?.SUBTRACTION ?? cadKernel?.CSG?.SUBTRACTION ?? 1;
+
+  const rawTagStyle = params.p22 !== undefined && params.p22 !== null ? String(params.p22) : 'raised';
+  const normalizedTagStyle =
+    rawTagStyle === 'embossed' ? 'raised' : rawTagStyle === 'debossed' ? 'curved' : rawTagStyle;
 
   const config = {
-    shape: params.p1 === 'rectangle' ? 'rectangle' : 'rounded',
-    text: params.p2 ?? 'ALEX VANCE',
+    shape: params.p1 !== undefined && params.p1 !== null && String(params.p1) === 'rectangle' ? 'rectangle' : 'rounded',
+    text: params.p2 !== undefined && params.p2 !== null ? String(params.p2) : 'ALEX VANCE',
     fontSize: Number(params.p3 ?? 10.5),
-    fontVariant: params.p4 ?? 'bold',
+    fontVariant: params.p4 !== undefined && params.p4 !== null ? String(params.p4) : 'bold',
     letterSpacing: Number(params.p5 ?? 0.4),
     letterFillet: Number(params.p6 ?? 0),
-    isUppercase: params.p7 ?? true,
-    hasSecondLine: params.p8 ?? true,
-    textLine2: params.p9 ?? 'DESIGN STUDIO',
+    isUppercase: toBool(params.p7, true),
+    hasSecondLine: toBool(params.p8, true),
+    textLine2: params.p9 !== undefined && params.p9 !== null ? String(params.p9) : 'DESIGN STUDIO',
     fontSize2: Number(params.p10 ?? 5.5),
     lineSpacing: Number(params.p11 ?? 2.5),
     baseThickness: Number(params.p12 ?? 5.0),
@@ -587,18 +739,20 @@ export function generateModel(params, cadKernel) {
     filletRadius: Number(params.p14 ?? 6.0),
     edgeBevel: Number(params.p15 ?? 0.8),
     minBaseLength: Number(params.p16 ?? 100.0),
-    holePlacement: params.p17 ?? 'none',
+    holePlacement: params.p17 !== undefined && params.p17 !== null ? String(params.p17) : 'none',
     holeCount: Number(params.p18 ?? 2),
     holeDiameter: Number(params.p19 ?? 4.5),
     holeEdgeMargin: Number(params.p20 ?? 5.0),
     holeSymmetricalSpacing: Number(params.p21 ?? 80.0),
-    tagStyle: params.p22 ?? 'embossed',
+    tagStyle: normalizedTagStyle,
     reliefHeight: Number(params.p23 ?? 1.8),
     stencilGap: Number(params.p24 ?? 1.4),
-    stencilBridges: params.p25 ?? true,
-    centerTextInBase: params.p26 ?? true,
-    csgSolidUnion: params.p27 ?? true,
+    stencilBridges: toBool(params.p25, true),
+    centerTextInBase: toBool(params.p26, true),
+    csgSolidUnion: toBool(params.p27, false),
   };
+
+  const font = await resolveFont(cadKernel, config.fontVariant);
 
   const textStr1 = config.isUppercase ? (config.text || '').toUpperCase() : (config.text || '');
   const textStr2 = config.hasSecondLine
@@ -644,6 +798,8 @@ export function generateModel(params, cadKernel) {
   baseGeom.computeBoundingBox();
   const baseBB = baseGeom.boundingBox;
   baseGeom.translate(0, 0, -baseBB.min.z);
+  baseGeom.computeBoundingBox();
+  const baseTopZ = baseGeom.boundingBox ? baseGeom.boundingBox.max.z : baseThickness;
   baseGeom.computeVertexNormals();
 
   const minTextThickness = 0.6;
@@ -652,18 +808,18 @@ export function generateModel(params, cadKernel) {
   const maxLetterFilletAllowed = Math.round((rawRelief * 0.5) * 100) / 100;
   const requestedFillet = Math.max(0, config.letterFillet ?? 0);
   const letterFilletVal = Math.min(requestedFillet, maxLetterFilletAllowed);
-  const letterFilletEnabled = letterFilletVal > 0.02 && config.tagStyle === 'embossed';
+  const letterFilletEnabled = letterFilletVal > 0.02 && config.tagStyle === 'raised';
 
-  let exportGeometry = baseGeom.clone();
-  let textGeom = undefined;
+  let basePartGeom = baseGeom;
+  let textPartGeom = null;
 
   const canCSG = Boolean(Evaluator && Brush);
   const evaluator = canCSG ? new Evaluator() : null;
   if (evaluator) evaluator.useGroups = false;
 
   if (textResult.shapes.length > 0) {
-    if (config.tagStyle === 'embossed') {
-      textGeom = new THREE.ExtrudeGeometry(textResult.shapes, {
+    if (config.tagStyle === 'raised') {
+      const raisedTextGeom = new THREE.ExtrudeGeometry(textResult.shapes, {
         depth: letterFilletEnabled ? Math.max(0.1, rawRelief - letterFilletVal) : rawRelief,
         bevelEnabled: letterFilletEnabled,
         bevelSize: letterFilletVal,
@@ -673,29 +829,34 @@ export function generateModel(params, cadKernel) {
         curveSegments: 16,
       });
 
-      textGeom.translate(textShiftX, textShiftY, baseThickness);
-      textGeom.computeVertexNormals();
+      raisedTextGeom.computeBoundingBox();
+      const textMinZ = raisedTextGeom.boundingBox ? raisedTextGeom.boundingBox.min.z : 0;
 
       if (config.csgSolidUnion && canCSG) {
+        raisedTextGeom.translate(textShiftX, textShiftY, baseTopZ - 0.15 - textMinZ);
+        raisedTextGeom.computeVertexNormals();
         try {
           const baseBrush = new Brush(baseGeom);
           baseBrush.updateMatrixWorld();
-
-          const overlapTextGeom = textGeom.clone();
-          overlapTextGeom.translate(0, 0, -0.05);
-          const textBrush = new Brush(overlapTextGeom);
+          const textBrush = new Brush(raisedTextGeom);
           textBrush.updateMatrixWorld();
-
-          const result = evaluator.evaluate(baseBrush, textBrush, ADDITION);
-          exportGeometry = result.geometry;
+          const unioned = evaluator.evaluate(baseBrush, textBrush, ADDITION);
+          basePartGeom = unioned.geometry;
+          basePartGeom.computeVertexNormals();
+          textPartGeom = null;
         } catch {
-          exportGeometry = combineGeometries(THREE, baseGeom, textGeom);
+          raisedTextGeom.translate(0, 0, 0.16);
+          basePartGeom = baseGeom;
+          textPartGeom = raisedTextGeom;
         }
       } else {
-        exportGeometry = combineGeometries(THREE, baseGeom, textGeom);
+        raisedTextGeom.translate(textShiftX, textShiftY, baseTopZ + 0.01 - textMinZ);
+        raisedTextGeom.computeVertexNormals();
+        basePartGeom = baseGeom;
+        textPartGeom = raisedTextGeom;
       }
-    } else if (config.tagStyle === 'debossed' && canCSG) {
-      const maxCarve = Math.max(0.2, baseThickness - minTextThickness);
+    } else if (config.tagStyle === 'curved') {
+      const maxCarve = Math.max(0.2, baseTopZ - minTextThickness);
       const carveDepth = Math.min(rawRelief, maxCarve);
       const cutExtrudeDepth = carveDepth + 1.0;
 
@@ -704,83 +865,108 @@ export function generateModel(params, cadKernel) {
         bevelEnabled: false,
         curveSegments: 16,
       });
-      cuttingTextGeom.translate(textShiftX, textShiftY, baseThickness - carveDepth);
+      cuttingTextGeom.translate(textShiftX, textShiftY, baseTopZ - carveDepth);
       cuttingTextGeom.computeVertexNormals();
 
-      try {
-        const baseBrush = new Brush(baseGeom);
-        baseBrush.updateMatrixWorld();
-        const textBrush = new Brush(cuttingTextGeom);
-        textBrush.updateMatrixWorld();
+      if (canCSG) {
+        try {
+          const baseBrush = new Brush(baseGeom);
+          baseBrush.updateMatrixWorld();
+          const textBrush = new Brush(cuttingTextGeom);
+          textBrush.updateMatrixWorld();
 
-        const result = evaluator.evaluate(baseBrush, textBrush, SUBTRACTION);
-        exportGeometry = result.geometry;
-        exportGeometry.computeVertexNormals();
-      } catch {
-        exportGeometry = baseGeom.clone();
+          const result = evaluator.evaluate(baseBrush, textBrush, SUBTRACTION);
+          basePartGeom = result.geometry;
+          basePartGeom.computeVertexNormals();
+        } catch {
+          basePartGeom = baseGeom.clone();
+        }
+      } else {
+        basePartGeom = baseGeom.clone();
       }
-    } else if (config.tagStyle === 'cutout' && canCSG) {
-      const throughCutDepth = baseThickness + 2.0;
-      const cuttingTextGeom = new THREE.ExtrudeGeometry(textResult.shapes, {
-        depth: throughCutDepth,
+
+      const inlayDepth = Math.max(0.2, carveDepth - 0.01);
+      const inlayTextGeom = new THREE.ExtrudeGeometry(textResult.shapes, {
+        depth: inlayDepth,
         bevelEnabled: false,
         curveSegments: 16,
       });
+      inlayTextGeom.translate(textShiftX, textShiftY, baseTopZ - carveDepth + 0.01);
+      inlayTextGeom.computeVertexNormals();
+      textPartGeom = inlayTextGeom;
+    } else if (config.tagStyle === 'cutout') {
+      if (canCSG) {
+        const throughCutDepth = baseTopZ + 2.0;
+        const cuttingTextGeom = new THREE.ExtrudeGeometry(textResult.shapes, {
+          depth: throughCutDepth,
+          bevelEnabled: false,
+          curveSegments: 16,
+        });
 
-      cuttingTextGeom.translate(textShiftX, textShiftY, -1.0);
-      cuttingTextGeom.computeVertexNormals();
+        cuttingTextGeom.translate(textShiftX, textShiftY, -1.0);
+        cuttingTextGeom.computeVertexNormals();
 
-      let cuttingBrush = new Brush(cuttingTextGeom);
-      cuttingBrush.updateMatrixWorld();
+        let cuttingBrush = new Brush(cuttingTextGeom);
+        cuttingBrush.updateMatrixWorld();
 
-      const stencilGap = Math.max(minTextThickness, Math.min(10.0, config.stencilGap || 1.0));
-      const bridgesEnabled = config.stencilBridges !== false;
+        const stencilGap = Math.max(minTextThickness, Math.min(10.0, config.stencilGap || 1.0));
+        const bridgesEnabled = config.stencilBridges !== false;
 
-      if (bridgesEnabled && textResult.holeIslands.length > 0) {
-        for (const island of textResult.holeIslands) {
-          const islandCenterX = island.cx + textShiftX;
-          const islandCenterY = island.cy + textShiftY;
+        if (bridgesEnabled && textResult.holeIslands.length > 0) {
+          for (const island of textResult.holeIslands) {
+            const islandCenterX = island.cx + textShiftX;
+            const islandCenterY = island.cy + textShiftY;
 
-          const bridgeGeom = new THREE.BoxGeometry(
-            stencilGap,
-            Math.max(fontSize1 * 1.6, island.height * 2.2),
-            throughCutDepth + 1.0
-          );
-          bridgeGeom.translate(islandCenterX, islandCenterY, throughCutDepth / 2 - 1.0);
-          bridgeGeom.computeVertexNormals();
+            const bridgeGeom = new THREE.BoxGeometry(
+              stencilGap,
+              Math.max(fontSize1 * 1.6, island.height * 2.2),
+              throughCutDepth + 1.0
+            );
+            bridgeGeom.translate(islandCenterX, islandCenterY, throughCutDepth / 2 - 1.0);
+            bridgeGeom.computeVertexNormals();
 
-          const bridgeBrush = new Brush(bridgeGeom);
-          bridgeBrush.updateMatrixWorld();
+            const bridgeBrush = new Brush(bridgeGeom);
+            bridgeBrush.updateMatrixWorld();
 
-          try {
-            cuttingBrush = evaluator.evaluate(cuttingBrush, bridgeBrush, SUBTRACTION);
-            cuttingBrush.updateMatrixWorld();
-          } catch {
-            // Keep cutting brush if bridge subtraction hits edge case
+            try {
+              cuttingBrush = evaluator.evaluate(cuttingBrush, bridgeBrush, SUBTRACTION);
+              cuttingBrush.updateMatrixWorld();
+            } catch {
+              // Keep cutting brush if bridge subtraction hits edge case
+            }
           }
         }
-      }
 
-      try {
-        const baseBrush = new Brush(baseGeom);
-        baseBrush.updateMatrixWorld();
+        try {
+          const baseBrush = new Brush(baseGeom);
+          baseBrush.updateMatrixWorld();
 
-        const result = evaluator.evaluate(baseBrush, cuttingBrush, SUBTRACTION);
-        exportGeometry = result.geometry;
-        exportGeometry.computeVertexNormals();
-      } catch {
-        exportGeometry = baseGeom.clone();
+          const result = evaluator.evaluate(baseBrush, cuttingBrush, SUBTRACTION);
+          basePartGeom = result.geometry;
+          basePartGeom.computeVertexNormals();
+        } catch {
+          basePartGeom = baseGeom.clone();
+        }
       }
+      textPartGeom = null;
     }
   }
 
-  const analysis = analyzeMeshWatertightness(THREE, exportGeometry);
-  const totalHeight = config.tagStyle === 'embossed' ? baseThickness + rawRelief : baseThickness;
+  const baseAnalysis = analyzeMeshWatertightness(THREE, basePartGeom);
+  const textAnalysis = textPartGeom ? analyzeMeshWatertightness(THREE, textPartGeom) : null;
+  const totalVolumeMm3 = baseAnalysis.volumeMm3 + (textAnalysis ? textAnalysis.volumeMm3 : 0);
+  const totalVolumeCm3 = totalVolumeMm3 / 1000;
+  const totalHeight = config.tagStyle === 'raised' ? baseTopZ + rawRelief : baseTopZ;
+
+  const parts = {
+    base_plate: geometryToPartBuffers(basePartGeom),
+  };
+  if (config.tagStyle !== 'cutout' && textPartGeom) {
+    parts.text_inlay = geometryToPartBuffers(textPartGeom);
+  }
 
   return {
-    geometry: exportGeometry,
-    baseGeometry: baseGeom,
-    textGeometry: textGeom,
+    parts,
     holes: baseResult.holes,
     bounds: baseBounds,
     dimensions: {
@@ -794,16 +980,18 @@ export function generateModel(params, cadKernel) {
       holeDiameter: config.holePlacement === 'none' ? 0 : config.holeDiameter,
       holeCount: config.holePlacement === 'none' ? 0 : baseResult.holes.length,
       minWallThickness: Math.round(config.holeEdgeMargin * 10) / 10,
-      volumeMm3: Math.round(analysis.volumeMm3),
-      volumeCm3: Math.round(analysis.volumeCm3 * 100) / 100,
-      weightGramsPLA: analysis.weightGramsPLA,
-      estimatedPrintMinutes: analysis.estimatedPrintMinutes,
+      volumeMm3: Math.round(totalVolumeMm3),
+      volumeCm3: Math.round(totalVolumeCm3 * 100) / 100,
+      weightGramsPLA: Math.round(totalVolumeCm3 * 1.24 * 100) / 100,
+      estimatedPrintMinutes: Math.max(3, Math.round(3 + totalVolumeCm3 * 3.5)),
       estimatedLayers: Math.ceil(totalHeight / 0.2),
-      isWatertight: analysis.isWatertight || analysis.boundaryEdges <= 16,
-      vertexCount: analysis.vertexCount,
-      triangleCount: analysis.triangleCount,
-      boundaryEdges: analysis.boundaryEdges,
-      nonManifoldEdges: analysis.nonManifoldEdges,
+      isWatertight:
+        (baseAnalysis.isWatertight || baseAnalysis.boundaryEdges <= 16) &&
+        (!textAnalysis || textAnalysis.isWatertight || textAnalysis.boundaryEdges <= 16),
+      vertexCount: baseAnalysis.vertexCount + (textAnalysis ? textAnalysis.vertexCount : 0),
+      triangleCount: baseAnalysis.triangleCount + (textAnalysis ? textAnalysis.triangleCount : 0),
+      boundaryEdges: baseAnalysis.boundaryEdges + (textAnalysis ? textAnalysis.boundaryEdges : 0),
+      nonManifoldEdges: baseAnalysis.nonManifoldEdges + (textAnalysis ? textAnalysis.nonManifoldEdges : 0),
     },
   };
 }

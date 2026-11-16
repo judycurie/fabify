@@ -1,0 +1,170 @@
+{
+  "defaultMaterialId": "matte_carbon",
+  "materials": [
+    {
+      "id": "matte_carbon",
+      "name": "Matte Carbon",
+      "filamentType": "Matte",
+      "color": "#18181b",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "pure_white",
+      "name": "Pure White",
+      "filamentType": "PLA",
+      "color": "#ffffff",
+      "roughness": 0.25,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "jet_black",
+      "name": "Jet Black",
+      "filamentType": "PLA",
+      "color": "#09090b",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "dark_slate",
+      "name": "Dark Slate",
+      "filamentType": "PLA",
+      "color": "#27272a",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "mid_grey",
+      "name": "Mid Grey",
+      "filamentType": "PLA",
+      "color": "#52525b",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "light_silver",
+      "name": "Light Silver",
+      "filamentType": "PLA",
+      "color": "#d4d4d8",
+      "roughness": 0.25,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "warm_terracotta",
+      "name": "Warm Terracotta",
+      "filamentType": "PLA",
+      "color": "#c2410c",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "forest_green",
+      "name": "Forest Green",
+      "filamentType": "PLA",
+      "color": "#15803d",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "ffp_accent_violet",
+      "name": "FFP Accent Violet",
+      "filamentType": "PLA",
+      "color": "#4B00F2",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "coral_rose",
+      "name": "Coral Rose",
+      "filamentType": "PLA",
+      "color": "#F26C65",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "electric_cyan",
+      "name": "Electric Cyan",
+      "filamentType": "PLA",
+      "color": "#06b6d4",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "signal_orange",
+      "name": "Signal Orange",
+      "filamentType": "PLA",
+      "color": "#ea580c",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "studio_forest_green",
+      "name": "Studio Forest Green",
+      "filamentType": "PLA",
+      "color": "#16a34a",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "cool_slate_grey",
+      "name": "Cool Slate Grey",
+      "filamentType": "PLA",
+      "color": "#71717a",
+      "roughness": 0.45,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    },
+    {
+      "id": "off_white",
+      "name": "Off White",
+      "filamentType": "PLA",
+      "color": "#f4f4f5",
+      "roughness": 0.25,
+      "metalness": 0.05,
+      "clearcoat": 0.0,
+      "transmission": 0.0,
+      "opacity": 1.0
+    }
+  ]
+}

@@ -1,16 +1,19 @@
 {
   "productSlug": "desk-organizer-box",
   "displayName": "Modular Desk Organizer & Tray Forge",
+  "partSlots": ["base", "text"],
   "parameters": [
     {
       "id": "p1",
       "key": "width",
       "label": "Length (X)",
       "type": "slider",
+      "group": "Outer Dimensions",
+      "order": 1,
+      "description": "Total external X-axis width of the organizer tray.",
       "min": 40,
-      "max": 260,
+      "max": 280,
       "step": 5,
-      "options": [],
       "unit": "mm",
       "default": 120
     },
@@ -19,10 +22,12 @@
       "key": "depth",
       "label": "Depth (Y)",
       "type": "slider",
+      "group": "Outer Dimensions",
+      "order": 2,
+      "description": "Total external Y-axis front-to-back depth of the tray.",
       "min": 40,
-      "max": 200,
+      "max": 220,
       "step": 5,
-      "options": [],
       "unit": "mm",
       "default": 80
     },
@@ -31,10 +36,12 @@
       "key": "height",
       "label": "Height (Z)",
       "type": "slider",
+      "group": "Outer Dimensions",
+      "order": 3,
+      "description": "Total external Z-axis wall height from build plate to top rim.",
       "min": 18,
       "max": 120,
-      "step": 5,
-      "options": [],
+      "step": 2,
       "unit": "mm",
       "default": 45
     },
@@ -43,10 +50,12 @@
       "key": "wallThickness",
       "label": "Wall Thickness",
       "type": "slider",
+      "group": "Structure & Stacking",
+      "order": 9,
+      "description": "Perimeter outer shell wall thickness.",
       "min": 1.2,
       "max": 6.0,
       "step": 0.2,
-      "options": [],
       "unit": "mm",
       "default": 2.4
     },
@@ -55,10 +64,12 @@
       "key": "floorThickness",
       "label": "Floor Thickness",
       "type": "slider",
+      "group": "Structure & Stacking",
+      "order": 10,
+      "description": "Solid base floor thickness beneath all pockets.",
       "min": 1.2,
       "max": 8.0,
       "step": 0.2,
-      "options": [],
       "unit": "mm",
       "default": 2.4
     },
@@ -67,10 +78,12 @@
       "key": "filletRadius",
       "label": "Outer Corner Fillet",
       "type": "slider",
-      "min": 1.0,
-      "max": 15.0,
+      "group": "Outer Dimensions",
+      "order": 4,
+      "description": "Vertical outer corner radius in millimeters.",
+      "min": 0.5,
+      "max": 16.0,
       "step": 0.5,
-      "options": [],
       "unit": "mm",
       "default": 5.0
     },
@@ -79,10 +92,12 @@
       "key": "edgeBevel",
       "label": "Top Edge Bevel",
       "type": "slider",
+      "group": "Outer Dimensions",
+      "order": 5,
+      "description": "Chamfer bevel applied to the top and bottom outer rim edges.",
       "min": 0,
       "max": 3.0,
       "step": 0.1,
-      "options": [],
       "unit": "mm",
       "default": 0.6
     },
@@ -91,10 +106,12 @@
       "key": "gridColumns",
       "label": "Grid Columns",
       "type": "slider",
+      "group": "Compartment Grid",
+      "order": 6,
+      "description": "Number of internal compartment columns along the X axis.",
       "min": 1,
       "max": 6,
       "step": 1,
-      "options": [],
       "unit": "none",
       "default": 2
     },
@@ -103,10 +120,12 @@
       "key": "gridRows",
       "label": "Grid Rows",
       "type": "slider",
+      "group": "Compartment Grid",
+      "order": 7,
+      "description": "Number of internal compartment rows along the Y axis.",
       "min": 1,
       "max": 5,
       "step": 1,
-      "options": [],
       "unit": "none",
       "default": 2
     },
@@ -115,22 +134,26 @@
       "key": "dividerThickness",
       "label": "Divider Thickness",
       "type": "slider",
+      "group": "Compartment Grid",
+      "order": 8,
+      "description": "Wall thickness of internal partition ribs between compartments.",
       "min": 1.0,
       "max": 4.0,
       "step": 0.2,
-      "options": [],
       "unit": "mm",
       "default": 1.8
     },
     {
       "id": "p11",
       "key": "dividerHeightPercent",
-      "label": "Divider Height Percent",
+      "label": "Divider Height (%)",
       "type": "slider",
+      "group": "Structure & Stacking",
+      "order": 11,
+      "description": "Height of internal partition ribs as a percentage of interior pocket depth.",
       "min": 50,
       "max": 100,
       "step": 5,
-      "options": [],
       "unit": "none",
       "default": 100
     },
@@ -139,11 +162,9 @@
       "key": "hasScoop",
       "label": "Finger Scoops",
       "type": "boolean",
-      "min": 0,
-      "max": 1,
-      "step": 1,
-      "options": [],
-      "unit": "none",
+      "group": "Structure & Stacking",
+      "order": 12,
+      "description": "Add curved ergonomic front bottom ramps in each compartment for easy small-item pickup.",
       "default": true
     },
     {
@@ -151,11 +172,17 @@
       "key": "scoopRadius",
       "label": "Scoop Radius",
       "type": "slider",
+      "group": "Structure & Stacking",
+      "order": 13,
+      "description": "Curvature radius of the interior front finger scoop fillet.",
       "min": 2.0,
       "max": 15.0,
       "step": 0.5,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p12",
+        "equals": true
+      },
       "default": 6.0
     },
     {
@@ -163,11 +190,9 @@
       "key": "hasStackingLip",
       "label": "Stacking Lip",
       "type": "boolean",
-      "min": 0,
-      "max": 1,
-      "step": 1,
-      "options": [],
-      "unit": "none",
+      "group": "Structure & Stacking",
+      "order": 14,
+      "description": "Carve a stepped inner rim along the top edge to interlock stacked units.",
       "default": false
     },
     {
@@ -175,11 +200,17 @@
       "key": "stackingLipHeight",
       "label": "Stacking Lip Height",
       "type": "slider",
+      "group": "Structure & Stacking",
+      "order": 15,
+      "description": "Vertical engagement depth of the stepped top stacking lip.",
       "min": 2.0,
       "max": 6.0,
       "step": 0.5,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p14",
+        "equals": true
+      },
       "default": 3.0
     },
     {
@@ -187,11 +218,9 @@
       "key": "hasLabel",
       "label": "Front Face Label",
       "type": "boolean",
-      "min": 0,
-      "max": 1,
-      "step": 1,
-      "options": [],
-      "unit": "none",
+      "group": "Front Label",
+      "order": 16,
+      "description": "Enable embossed or debossed 3D identification lettering on the organizer.",
       "default": true
     },
     {
@@ -199,11 +228,16 @@
       "key": "labelText",
       "label": "Label Text",
       "type": "text",
-      "min": 0,
-      "max": 32,
-      "step": 1,
-      "options": [],
-      "unit": "none",
+      "group": "Front Label",
+      "order": 17,
+      "description": "Custom label text placed on the box wall or interior floor.",
+      "placeholder": "ORGANIZER, TOOLS, EDC...",
+      "validationPattern": "^.{0,32}$",
+      "maxLength": 32,
+      "visibleWhen": {
+        "param": "p16",
+        "equals": true
+      },
       "default": "ORGANIZER"
     },
     {
@@ -211,11 +245,17 @@
       "key": "labelFontSize",
       "label": "Label Font Size",
       "type": "slider",
+      "group": "Front Label",
+      "order": 18,
+      "description": "Target cap height for label lettering (automatically scaled to fit available face bounds).",
       "min": 4.0,
       "max": 16.0,
       "step": 0.5,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p16",
+        "equals": true
+      },
       "default": 7.0
     },
     {
@@ -223,11 +263,18 @@
       "key": "labelStyle",
       "label": "Label Style",
       "type": "select",
-      "min": 0,
-      "max": 1,
-      "step": 1,
-      "options": ["embossed", "debossed"],
-      "unit": "none",
+      "display": "segmented",
+      "group": "Front Label",
+      "order": 19,
+      "description": "Raised two-color embossed accent lettering or single-body recessed debossed engraving.",
+      "options": [
+        { "value": "embossed", "label": "Embossed (Raised)" },
+        { "value": "debossed", "label": "Debossed (Recessed)" }
+      ],
+      "visibleWhen": {
+        "param": "p16",
+        "equals": true
+      },
       "default": "embossed"
     },
     {
@@ -235,11 +282,17 @@
       "key": "labelRelief",
       "label": "Label Relief Depth",
       "type": "slider",
+      "group": "Front Label",
+      "order": 20,
+      "description": "Protrusion height (embossed) or engraving cut depth (debossed).",
       "min": 0.6,
       "max": 2.0,
       "step": 0.1,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p16",
+        "equals": true
+      },
       "default": 1.0
     },
     {
@@ -247,11 +300,23 @@
       "key": "textPosition",
       "label": "Label Position",
       "type": "select",
-      "min": 0,
-      "max": 4,
-      "step": 1,
-      "options": ["front_center", "front_left", "front_right", "front_top", "front_bottom"],
-      "unit": "none",
+      "display": "segmented",
+      "group": "Front Label",
+      "order": 21,
+      "description": "Anchor zone on the front wall, back wall, or interior compartment floor.",
+      "options": [
+        { "value": "front_center", "label": "Front Center" },
+        { "value": "front_top", "label": "Front Top" },
+        { "value": "front_bottom", "label": "Front Bottom" },
+        { "value": "front_left", "label": "Front Left" },
+        { "value": "front_right", "label": "Front Right" },
+        { "value": "back_wall", "label": "Back Face" },
+        { "value": "inside_bottom", "label": "Inside Floor" }
+      ],
+      "visibleWhen": {
+        "param": "p16",
+        "equals": true
+      },
       "default": "front_center"
     },
     {
@@ -259,22 +324,28 @@
       "key": "textVerticalOffset",
       "label": "Label Vertical Offset",
       "type": "slider",
+      "group": "Front Label",
+      "order": 22,
+      "description": "Fine Z-axis vertical nudge applied to wall-mounted labels.",
       "min": -15.0,
       "max": 15.0,
       "step": 0.5,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p16",
+        "equals": true
+      },
       "default": 0
     }
   ],
   "tiers": {
     "personal": {
       "formats": ["STL", "3MF"],
-      "licenseFile": "license_personal.txt"
+      "licenseFile": "LICENSE.txt"
     },
     "merchant": {
-      "formats": ["STL", "3MF", "STEP"],
-      "licenseFile": "license_commercial.txt"
+      "formats": ["STL", "3MF"],
+      "licenseFile": "LICENSE.txt"
     }
   }
 }

@@ -1,17 +1,21 @@
 {
   "productSlug": "architectural-plate",
   "displayName": "Architectural Plates & Stencil Signs",
+  "partSlots": ["base_plate", "text_inlay"],
   "parameters": [
     {
       "id": "p1",
       "key": "shape",
       "label": "Shape Profile",
       "type": "select",
-      "min": 0,
-      "max": 1,
-      "step": 1,
-      "options": ["rounded", "rectangle"],
-      "unit": "none",
+      "display": "segmented",
+      "group": "Text & Letters",
+      "order": 1,
+      "description": "Outer 2D plate contour (rounded architectural corners or crisp 90° rectangle).",
+      "options": [
+        { "value": "rounded", "label": "Rounded Rect" },
+        { "value": "rectangle", "label": "Rectangle" }
+      ],
       "default": "rounded"
     },
     {
@@ -19,11 +23,12 @@
       "key": "text",
       "label": "Text Content",
       "type": "text",
-      "min": 1,
-      "max": 40,
-      "step": 1,
-      "options": [],
-      "unit": "none",
+      "group": "Text & Letters",
+      "order": 2,
+      "description": "Primary line of signage or nameplate lettering.",
+      "placeholder": "e.g. ALEX VANCE, STUDIO 402, EXIT",
+      "validationPattern": "^.{1,40}$",
+      "maxLength": 40,
       "default": "ALEX VANCE"
     },
     {
@@ -31,10 +36,12 @@
       "key": "fontSize",
       "label": "Font Size",
       "type": "slider",
+      "group": "Text & Letters",
+      "order": 3,
+      "description": "Cap height in millimeters for the primary signage text.",
       "min": 8.0,
       "max": 32.0,
       "step": 0.5,
-      "options": [],
       "unit": "mm",
       "default": 10.5
     },
@@ -43,11 +50,14 @@
       "key": "fontVariant",
       "label": "Font Weight",
       "type": "select",
-      "min": 0,
-      "max": 1,
-      "step": 1,
-      "options": ["bold", "regular"],
-      "unit": "none",
+      "display": "segmented",
+      "group": "Text & Letters",
+      "order": 4,
+      "description": "Helvetica typeface stroke weight for architectural signage legibility.",
+      "options": [
+        { "value": "bold", "label": "Bold" },
+        { "value": "regular", "label": "Regular" }
+      ],
       "default": "bold"
     },
     {
@@ -55,10 +65,12 @@
       "key": "letterSpacing",
       "label": "Distance Between Letters",
       "type": "slider",
+      "group": "Text & Letters",
+      "order": 5,
+      "description": "Additional horizontal kerning gap between adjacent glyphs.",
       "min": 0,
       "max": 8.0,
       "step": 0.1,
-      "options": [],
       "unit": "mm",
       "default": 0.4
     },
@@ -67,11 +79,17 @@
       "key": "letterFillet",
       "label": "Letter Edge Fillet",
       "type": "slider",
+      "group": "Text & Letters",
+      "order": 6,
+      "description": "Soft bevel along the top edges of raised 3D letters.",
       "min": 0,
       "max": 1.5,
       "step": 0.05,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p22",
+        "equals": "raised"
+      },
       "default": 0
     },
     {
@@ -79,11 +97,9 @@
       "key": "isUppercase",
       "label": "Force Uppercase",
       "type": "boolean",
-      "min": 0,
-      "max": 1,
-      "step": 1,
-      "options": [],
-      "unit": "none",
+      "group": "Text & Letters",
+      "order": 7,
+      "description": "Automatically convert all input characters to uppercase capitals.",
       "default": true
     },
     {
@@ -91,11 +107,9 @@
       "key": "hasSecondLine",
       "label": "Second Subtitle Line",
       "type": "boolean",
-      "min": 0,
-      "max": 1,
-      "step": 1,
-      "options": [],
-      "unit": "none",
+      "group": "Text & Letters",
+      "order": 8,
+      "description": "Enable a secondary subtitle or specification line below the primary text.",
       "default": true
     },
     {
@@ -103,11 +117,16 @@
       "key": "textLine2",
       "label": "Subtitle Text",
       "type": "text",
-      "min": 0,
-      "max": 40,
-      "step": 1,
-      "options": [],
-      "unit": "none",
+      "group": "Text & Letters",
+      "order": 9,
+      "description": "Optional secondary subtitle text (department, room number, or rating spec).",
+      "placeholder": "e.g. DESIGN STUDIO, PRIVATE",
+      "validationPattern": "^.{0,40}$",
+      "maxLength": 40,
+      "visibleWhen": {
+        "param": "p8",
+        "equals": true
+      },
       "default": "DESIGN STUDIO"
     },
     {
@@ -115,11 +134,17 @@
       "key": "fontSize2",
       "label": "Subtitle Size",
       "type": "slider",
+      "group": "Text & Letters",
+      "order": 10,
+      "description": "Cap height in millimeters for the secondary subtitle line.",
       "min": 4.5,
       "max": 18.0,
       "step": 0.5,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p8",
+        "equals": true
+      },
       "default": 5.5
     },
     {
@@ -127,11 +152,17 @@
       "key": "lineSpacing",
       "label": "Line Spacing",
       "type": "slider",
+      "group": "Text & Letters",
+      "order": 11,
+      "description": "Vertical clearance gap between the primary line and subtitle line.",
       "min": 0.5,
       "max": 12.0,
       "step": 0.1,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p8",
+        "equals": true
+      },
       "default": 2.5
     },
     {
@@ -139,10 +170,12 @@
       "key": "baseThickness",
       "label": "Plate Thickness",
       "type": "slider",
+      "group": "Outline & Base Fillets",
+      "order": 12,
+      "description": "Total Z-axis thickness of the solid architectural base plate.",
       "min": 2.4,
       "max": 8.0,
       "step": 0.2,
-      "options": [],
       "unit": "mm",
       "default": 5.0
     },
@@ -151,10 +184,12 @@
       "key": "padding",
       "label": "Border Margin (Padding)",
       "type": "slider",
+      "group": "Outline & Base Fillets",
+      "order": 13,
+      "description": "Minimum border clearance surrounding the signage text.",
       "min": 5.0,
       "max": 25.0,
       "step": 0.5,
-      "options": [],
       "unit": "mm",
       "default": 8.0
     },
@@ -163,11 +198,17 @@
       "key": "filletRadius",
       "label": "Outline Corner Fillet",
       "type": "slider",
+      "group": "Outline & Base Fillets",
+      "order": 14,
+      "description": "Corner arc radius applied to rounded architectural plate edges.",
       "min": 2.0,
       "max": 20.0,
       "step": 0.5,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p1",
+        "equals": "rounded"
+      },
       "default": 6.0
     },
     {
@@ -175,11 +216,17 @@
       "key": "edgeBevel",
       "label": "Outline Edge Bevel",
       "type": "slider",
-      "min": 0.2,
+      "group": "Outline & Base Fillets",
+      "order": 15,
+      "description": "Architectural chamfer bevel along the outer perimeter edges.",
+      "min": 0.0,
       "max": 2.0,
       "step": 0.05,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p22",
+        "notEquals": "cutout"
+      },
       "default": 0.8
     },
     {
@@ -187,10 +234,12 @@
       "key": "minBaseLength",
       "label": "Min Plate Length",
       "type": "slider",
+      "group": "Outline & Base Fillets",
+      "order": 16,
+      "description": "Minimum X-axis plate span (calibrated to start at 100 mm for door signs & plaques).",
       "min": 80.0,
       "max": 240.0,
       "step": 5.0,
-      "options": [],
       "unit": "mm",
       "default": 100.0
     },
@@ -199,11 +248,17 @@
       "key": "holePlacement",
       "label": "Mounting Hole Placement",
       "type": "select",
-      "min": 0,
-      "max": 4,
-      "step": 1,
-      "options": ["none", "both-ends", "top", "left", "right"],
-      "unit": "none",
+      "display": "segmented",
+      "group": "Mounting Holes",
+      "order": 17,
+      "description": "Screw or bolt mounting hole arrangement around the perimeter.",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "both-ends", "label": "Both" },
+        { "value": "top", "label": "Top" },
+        { "value": "left", "label": "Left" },
+        { "value": "right", "label": "Right" }
+      ],
       "default": "none"
     },
     {
@@ -211,23 +266,36 @@
       "key": "holeCount",
       "label": "Hole Count",
       "type": "select",
-      "min": 1,
-      "max": 2,
-      "step": 1,
-      "options": [1, 2],
-      "unit": "none",
-      "default": 2
+      "display": "segmented",
+      "group": "Mounting Holes",
+      "order": 18,
+      "description": "Single centered mounting bore or symmetrical dual screw holes.",
+      "options": [
+        { "value": 1, "label": "1 Center Hole" },
+        { "value": 2, "label": "2 Symmetrical Holes" }
+      ],
+      "visibleWhen": {
+        "param": "p17",
+        "notEquals": "none"
+      },
+      "default": 1
     },
     {
       "id": "p19",
       "key": "holeDiameter",
       "label": "Hole Diameter",
       "type": "slider",
+      "group": "Mounting Holes",
+      "order": 19,
+      "description": "Inner bore diameter sized for M3–M6 mounting screws or standoffs.",
       "min": 3.5,
       "max": 8.0,
       "step": 0.5,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p17",
+        "notEquals": "none"
+      },
       "default": 4.5
     },
     {
@@ -235,11 +303,17 @@
       "key": "holeEdgeMargin",
       "label": "Hole Edge Margin",
       "type": "slider",
+      "group": "Mounting Holes",
+      "order": 20,
+      "description": "Minimum wall thickness around mounting bores and clearance from text.",
       "min": 2.5,
       "max": 12.0,
       "step": 0.5,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p17",
+        "notEquals": "none"
+      },
       "default": 5.0
     },
     {
@@ -247,11 +321,17 @@
       "key": "holeSymmetricalSpacing",
       "label": "Dual Hole Spacing",
       "type": "slider",
+      "group": "Mounting Holes",
+      "order": 21,
+      "description": "Center-to-center distance between paired mounting holes.",
       "min": 16.0,
       "max": 200.0,
       "step": 2.0,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p18",
+        "equals": 2
+      },
       "default": 80.0
     },
     {
@@ -259,23 +339,33 @@
       "key": "tagStyle",
       "label": "3D Relief Style",
       "type": "select",
-      "min": 0,
-      "max": 2,
-      "step": 1,
-      "options": ["embossed", "debossed", "cutout"],
-      "unit": "none",
-      "default": "embossed"
+      "display": "segmented",
+      "group": "3D Profile & Style",
+      "order": 22,
+      "description": "Raised two-color relief, flush carved inlay, or backlit through-cut stencil.",
+      "options": [
+        { "value": "raised", "label": "Raised" },
+        { "value": "curved", "label": "Carved" },
+        { "value": "cutout", "label": "Cutout" }
+      ],
+      "default": "raised"
     },
     {
       "id": "p23",
       "key": "reliefHeight",
       "label": "Relief Depth",
       "type": "slider",
+      "group": "3D Profile & Style",
+      "order": 23,
+      "description": "Extrusion height above plate in Raised mode, or inlay pocket depth in Carved mode.",
       "min": 0.6,
       "max": 6.0,
       "step": 0.2,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p22",
+        "notEquals": "cutout"
+      },
       "default": 1.8
     },
     {
@@ -283,11 +373,17 @@
       "key": "stencilGap",
       "label": "Stencil Bridge Gap",
       "type": "slider",
+      "group": "3D Profile & Style",
+      "order": 24,
+      "description": "Width of retention bridges connecting enclosed letter counters (e.g. O, A, P, R).",
       "min": 0.6,
       "max": 5.0,
       "step": 0.1,
-      "options": [],
       "unit": "mm",
+      "visibleWhen": {
+        "param": "p22",
+        "equals": "cutout"
+      },
       "default": 1.4
     },
     {
@@ -295,11 +391,13 @@
       "key": "stencilBridges",
       "label": "Stencil Bridges",
       "type": "boolean",
-      "min": 0,
-      "max": 1,
-      "step": 1,
-      "options": [],
-      "unit": "none",
+      "group": "3D Profile & Style",
+      "order": 25,
+      "description": "Automatically preserve floating inner islands in cutout stencil letters.",
+      "visibleWhen": {
+        "param": "p22",
+        "equals": "cutout"
+      },
       "default": true
     },
     {
@@ -307,34 +405,34 @@
       "key": "centerTextInBase",
       "label": "Center Text in Plate",
       "type": "boolean",
-      "min": 0,
-      "max": 1,
-      "step": 1,
-      "options": [],
-      "unit": "none",
+      "group": "3D Profile & Style",
+      "order": 26,
+      "description": "Symmetrically balance the plate outline when mounting holes sit on a single edge.",
       "default": true
     },
     {
       "id": "p27",
       "key": "csgSolidUnion",
-      "label": "Manifold CSG Solid Union",
+      "label": "Single-Body CSG Union",
       "type": "boolean",
-      "min": 0,
-      "max": 1,
-      "step": 1,
-      "options": [],
-      "unit": "none",
-      "default": true
+      "group": "3D Profile & Style",
+      "order": 27,
+      "description": "Fuse raised letters and plate into one single-color manifold mesh (disable for dual-color AMS).",
+      "visibleWhen": {
+        "param": "p22",
+        "equals": "raised"
+      },
+      "default": false
     }
   ],
   "tiers": {
     "personal": {
       "formats": ["STL", "3MF"],
-      "licenseFile": "license_personal.txt"
+      "licenseFile": "LICENSE.txt"
     },
     "merchant": {
-      "formats": ["STL", "3MF", "STEP"],
-      "licenseFile": "license_commercial.txt"
+      "formats": ["STL", "3MF"],
+      "licenseFile": "LICENSE.txt"
     }
   }
 }

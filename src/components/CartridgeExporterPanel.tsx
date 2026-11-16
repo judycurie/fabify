@@ -4,14 +4,17 @@ import { Package, Download, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { AppTheme } from '../types/tag';
 
 import tagSchemaRaw from '../cartridges/parametric-tag/schema.json?raw';
+import tagMaterialsRaw from '../cartridges/parametric-tag/materials.json?raw';
 import tagPresetsRaw from '../cartridges/parametric-tag/presets.json?raw';
 import tagGeometryRaw from '../cartridges/parametric-tag/geometry.js?raw';
 
 import plateSchemaRaw from '../cartridges/architectural-plate/schema.json?raw';
+import plateMaterialsRaw from '../cartridges/architectural-plate/materials.json?raw';
 import platePresetsRaw from '../cartridges/architectural-plate/presets.json?raw';
 import plateGeometryRaw from '../cartridges/architectural-plate/geometry.js?raw';
 
 import boxSchemaRaw from '../cartridges/desk-organizer-box/schema.json?raw';
+import boxMaterialsRaw from '../cartridges/desk-organizer-box/materials.json?raw';
 import boxPresetsRaw from '../cartridges/desk-organizer-box/presets.json?raw';
 import boxGeometryRaw from '../cartridges/desk-organizer-box/geometry.js?raw';
 
@@ -19,6 +22,7 @@ interface CartridgeDefinition {
   productSlug: string;
   displayName: string;
   schema: string;
+  materials: string;
   presets: string;
   geometry: string;
 }
@@ -28,6 +32,7 @@ const PRODUCT_CARTRIDGES: CartridgeDefinition[] = [
     productSlug: 'parametric-tag',
     displayName: 'Parametric Tag & Keyring',
     schema: tagSchemaRaw,
+    materials: tagMaterialsRaw,
     presets: tagPresetsRaw,
     geometry: tagGeometryRaw,
   },
@@ -35,6 +40,7 @@ const PRODUCT_CARTRIDGES: CartridgeDefinition[] = [
     productSlug: 'architectural-plate',
     displayName: 'Architectural Plates & Signs',
     schema: plateSchemaRaw,
+    materials: plateMaterialsRaw,
     presets: platePresetsRaw,
     geometry: plateGeometryRaw,
   },
@@ -42,6 +48,7 @@ const PRODUCT_CARTRIDGES: CartridgeDefinition[] = [
     productSlug: 'desk-organizer-box',
     displayName: 'Desk Organizer & Tray',
     schema: boxSchemaRaw,
+    materials: boxMaterialsRaw,
     presets: boxPresetsRaw,
     geometry: boxGeometryRaw,
   },
@@ -74,6 +81,7 @@ export const CartridgeExporterPanel: React.FC<CartridgeExporterPanelProps> = ({ 
     try {
       const zip = new JSZip();
       zip.file('schema.json', cartridge.schema);
+      zip.file('materials.json', cartridge.materials);
       zip.file('presets.json', cartridge.presets);
       zip.file('geometry.js', cartridge.geometry);
       const blob = await zip.generateAsync({ type: 'blob' });
@@ -93,6 +101,7 @@ export const CartridgeExporterPanel: React.FC<CartridgeExporterPanelProps> = ({ 
         const folder = rootZip.folder(cartridge.productSlug);
         if (folder) {
           folder.file('schema.json', cartridge.schema);
+          folder.file('materials.json', cartridge.materials);
           folder.file('presets.json', cartridge.presets);
           folder.file('geometry.js', cartridge.geometry);
         }
