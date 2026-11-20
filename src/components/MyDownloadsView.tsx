@@ -7,7 +7,7 @@ import { exportSTL } from '../utils/stlExporter';
 import { exportSTEP } from '../utils/stepExporter';
 import { generateBoxModel } from '../utils/boxGeometry';
 import { generateTagModel } from '../utils/tagGeometry';
-import { loadHelveticaFont } from '../utils/fontLoader';
+import { loadFont } from '../utils/fontLoader';
 import { sendModelEmail } from '../utils/emailModelService';
 import { 
   Download, 
@@ -122,7 +122,7 @@ export const MyDownloadsView: React.FC<MyDownloadsViewProps> = ({
   const handleDownloadSTL = async (item: CartItem) => {
     setDownloadingItemId(item.id);
     try {
-      const font = await loadHelveticaFont('bold');
+      const font = await loadFont(item.tagConfig?.fontFamily || 'helvetica', item.tagConfig?.fontVariant || 'bold');
       if (item.productType === 'box' && item.boxConfig) {
         const generated = await generateBoxModel(item.boxConfig, font);
         const slug = (item.customText || 'desk_box').replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -148,7 +148,7 @@ export const MyDownloadsView: React.FC<MyDownloadsViewProps> = ({
   const handleDownloadSTEP = async (item: CartItem) => {
     setDownloadingItemId(item.id);
     try {
-      const font = await loadHelveticaFont('bold');
+      const font = await loadFont(item.tagConfig?.fontFamily || 'helvetica', item.tagConfig?.fontVariant || 'bold');
       if (item.productType === 'box' && item.boxConfig) {
         const generated = await generateBoxModel(item.boxConfig, font);
         const slug = (item.customText || 'desk_box').replace(/[^a-zA-Z0-9_-]/g, '_');

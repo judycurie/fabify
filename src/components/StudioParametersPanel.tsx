@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { TagConfig, TagDimensions, AppTheme } from '../types/tag';
+import { TagConfig, TagDimensions, AppTheme, FONT_OPTIONS, FontFamily } from '../types/tag';
 import { BoxConfig, BoxDimensions } from '../types/box';
 import { ActiveTemplateInfo } from '../types/cart';
 import { StudioConfigurator } from './TopHeader';
@@ -185,7 +185,11 @@ export const StudioParametersPanel: React.FC<StudioParametersPanelProps> = ({
     const next = Math.max(minVal, Math.min(maxVal, currentVal + delta));
     const factor = Math.pow(10, precision);
     const rounded = Math.round(next * factor) / factor;
-    onUpdateTagConfig({ [key]: rounded });
+    if (key === 'filletRadius') {
+      onUpdateTagConfig({ filletRadius: rounded, autoFillet: false });
+    } else {
+      onUpdateTagConfig({ [key]: rounded });
+    }
   };
 
   // Stepper helper for box config
@@ -405,6 +409,60 @@ export const StudioParametersPanel: React.FC<StudioParametersPanelProps> = ({
                 />
               </div>
 
+              {/* Font Family & Weight */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-zinc-900 dark:text-white">Font Family</label>
+                  <div className="flex items-center gap-1">
+                    {(['bold', 'regular'] as const).map((variant) => {
+                      const active = (tagConfig.fontVariant || 'bold') === variant;
+                      return (
+                        <button
+                          key={variant}
+                          type="button"
+                          onClick={() => onUpdateTagConfig({ fontVariant: variant })}
+                          className={`px-1.5 py-0.5 rounded border text-[9.5px] font-bold capitalize transition-all ${
+                            active
+                              ? isLight
+                                ? 'bg-zinc-950 border-zinc-950 text-white'
+                                : 'bg-white border-white text-zinc-950'
+                              : isLight
+                              ? 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-100'
+                              : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
+                          }`}
+                        >
+                          {variant}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  {FONT_OPTIONS.map((f) => {
+                    const isSelected = (tagConfig.fontFamily || 'helvetica') === f.id;
+                    return (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => onUpdateTagConfig({ fontFamily: f.id as FontFamily })}
+                        style={{ fontFamily: f.cssFamily }}
+                        className={`py-1 px-1.5 rounded-md border text-[10px] font-bold truncate transition-all ${
+                          isSelected
+                            ? isLight
+                              ? 'bg-zinc-950 border-zinc-950 text-white shadow-xs'
+                              : 'bg-white border-white text-zinc-950 shadow-xs'
+                            : isLight
+                            ? 'bg-zinc-50 hover:bg-zinc-100 border-zinc-300 text-zinc-900'
+                            : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-100'
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Font Size (Contextual range: 4.5-11.5 for key tag, 8-32 for door sign plate) */}
               <div className="space-y-0.5">
                 <div className="flex justify-between text-[11px]">
@@ -587,38 +645,114 @@ export const StudioParametersPanel: React.FC<StudioParametersPanelProps> = ({
                 </h3>
               </div>
 
-              {/* Outline / Base Corner Fillet Radius */}
+              {/* Shape Profile */}
               <div className="space-y-0.5">
-                <div className="flex justify-between text-[11px]">
-                  <span className="font-bold text-zinc-900 dark:text-white">Outline Corner Fillet</span>
-                  <span className="font-mono font-black text-zinc-950 dark:text-white">{tagConfig.filletRadius} mm</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => stepTag('filletRadius', tagConfig.filletRadius, -tagRanges.filletRadius.step, tagRanges.filletRadius.min, tagRanges.filletRadius.max, 1)}
-                    className="w-5 h-5 rounded border flex items-center justify-center font-bold text-xs bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-950 dark:text-white"
-                  >
-                    <Minus className="w-2.5 h-2.5" />
-                  </button>
-                  <input
-                    type="range"
-                    min={tagRanges.filletRadius.min}
-                    max={tagRanges.filletRadius.max}
-                    step={tagRanges.filletRadius.step}
-                    value={tagConfig.filletRadius}
-                    onChange={(e) => onUpdateTagConfig({ filletRadius: Number(e.target.value) })}
-                    className="flex-1 h-1.5 accent-zinc-950 dark:accent-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => stepTag('filletRadius', tagConfig.filletRadius, tagRanges.filletRadius.step, tagRanges.filletRadius.min, tagRanges.filletRadius.max, 1)}
-                    className="w-5 h-5 rounded border flex items-center justify-center font-bold text-xs bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-950 dark:text-white"
-                  >
-                    <Plus className="w-2.5 h-2.5" />
-                  </button>
+                <label className="text-[11px] font-bold text-zinc-900 dark:text-white">Outline Shape</label>
+                <div className={`grid ${isDoorSignPlate ? 'grid-cols-2' : 'grid-cols-3'} gap-1`}>
+                  {(isDoorSignPlate
+                    ? [
+                        { id: 'rounded', label: 'Filleted Rect' },
+                        { id: 'rectangle', label: 'Rectangle' },
+                      ]
+                    : [
+                        { id: 'rounded', label: 'Filleted Rect' },
+                        { id: 'circle', label: 'Circle' },
+                        { id: 'rectangle', label: 'Rectangle' },
+                      ]
+                  ).map((s) => {
+                    const isSelected = (tagConfig.shape || 'rounded') === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => onUpdateTagConfig({ shape: s.id as any })}
+                        className={`py-1.5 px-1 rounded-md border text-[10px] font-bold transition-all ${
+                          isSelected
+                            ? isLight
+                              ? 'bg-zinc-950 border-zinc-950 text-white shadow-xs'
+                              : 'bg-white border-white text-zinc-950 shadow-xs'
+                            : isLight
+                            ? 'bg-zinc-50 hover:bg-zinc-100 border-zinc-300 text-zinc-900'
+                            : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-100'
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
+              {/* Outline / Base Corner Fillet Radius */}
+              {(tagConfig.shape || 'rounded') === 'rounded' && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-zinc-900 dark:text-white">Outline Corner Fillet</span>
+                    <span className="font-mono font-black text-zinc-950 dark:text-white">
+                      {tagConfig.autoFillet !== false
+                        ? `${(tagDimensions?.appliedFilletRadius ?? tagConfig.filletRadius).toFixed(1)} mm (½ W)`
+                        : `${tagConfig.filletRadius.toFixed(1)} mm`}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onUpdateTagConfig({ autoFillet: true })}
+                      className={`py-1 px-1.5 rounded-md border text-[10px] font-bold transition-all ${
+                        tagConfig.autoFillet !== false
+                          ? isLight
+                            ? 'bg-zinc-950 border-zinc-950 text-white shadow-xs'
+                            : 'bg-white border-white text-zinc-950 shadow-xs'
+                          : isLight
+                          ? 'bg-zinc-50 hover:bg-zinc-100 border-zinc-300 text-zinc-900'
+                          : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-100'
+                      }`}
+                    >
+                      ½ Width (Default)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onUpdateTagConfig({ autoFillet: false })}
+                      className={`py-1 px-1.5 rounded-md border text-[10px] font-bold transition-all ${
+                        tagConfig.autoFillet === false
+                          ? isLight
+                            ? 'bg-zinc-950 border-zinc-950 text-white shadow-xs'
+                            : 'bg-white border-white text-zinc-950 shadow-xs'
+                          : isLight
+                          ? 'bg-zinc-50 hover:bg-zinc-100 border-zinc-300 text-zinc-900'
+                          : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-100'
+                      }`}
+                    >
+                      Custom Radius
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => stepTag('filletRadius', tagConfig.filletRadius, -tagRanges.filletRadius.step, tagRanges.filletRadius.min, tagRanges.filletRadius.max, 1)}
+                      className="w-5 h-5 rounded border flex items-center justify-center font-bold text-xs bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-950 dark:text-white"
+                    >
+                      <Minus className="w-2.5 h-2.5" />
+                    </button>
+                    <input
+                      type="range"
+                      min={tagRanges.filletRadius.min}
+                      max={tagRanges.filletRadius.max}
+                      step={tagRanges.filletRadius.step}
+                      value={tagConfig.autoFillet !== false ? Math.min(tagRanges.filletRadius.max, Math.max(tagRanges.filletRadius.min, tagDimensions?.appliedFilletRadius ?? tagConfig.filletRadius)) : tagConfig.filletRadius}
+                      onChange={(e) => onUpdateTagConfig({ filletRadius: Number(e.target.value), autoFillet: false })}
+                      className="flex-1 h-1.5 accent-zinc-950 dark:accent-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => stepTag('filletRadius', tagConfig.filletRadius, tagRanges.filletRadius.step, tagRanges.filletRadius.min, tagRanges.filletRadius.max, 1)}
+                      className="w-5 h-5 rounded border flex items-center justify-center font-bold text-xs bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-950 dark:text-white"
+                    >
+                      <Plus className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Edge Fillet Radius for Outline */}
               <div className="space-y-0.5">
@@ -764,7 +898,33 @@ export const StudioParametersPanel: React.FC<StudioParametersPanelProps> = ({
               </div>
 
               {tagConfig.holePlacement !== 'none' && (
-                <div className="space-y-1">
+                <div className="space-y-1.5">
+                  {tagConfig.holePlacement !== 'both-ends' && (
+                    <div className="grid grid-cols-2 gap-1">
+                      {[
+                        { count: 1 as const, label: '1 Hole' },
+                        { count: 2 as const, label: '2 Holes' },
+                      ].map((opt) => (
+                        <button
+                          key={opt.count}
+                          type="button"
+                          onClick={() => onUpdateTagConfig({ holeCount: opt.count })}
+                          className={`py-1 px-1.5 rounded-md border text-[10px] font-bold transition-all ${
+                            tagConfig.holeCount === opt.count
+                              ? isLight
+                                ? 'bg-zinc-950 border-zinc-950 text-white shadow-xs'
+                                : 'bg-white border-white text-zinc-950 shadow-xs'
+                              : isLight
+                              ? 'bg-zinc-50 hover:bg-zinc-100 border-zinc-300 text-zinc-900'
+                              : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-100'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="space-y-0.5">
                     <div className="flex justify-between text-[11px]">
                       <span className="font-bold text-zinc-900 dark:text-white">Hole Diameter</span>
@@ -790,6 +950,38 @@ export const StudioParametersPanel: React.FC<StudioParametersPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => stepTag('holeDiameter', tagConfig.holeDiameter, tagRanges.holeDiameter.step, tagRanges.holeDiameter.min, tagRanges.holeDiameter.max, 1)}
+                        className="w-5 h-5 rounded border flex items-center justify-center font-bold text-xs bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-950 dark:text-white"
+                      >
+                        <Plus className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="font-bold text-zinc-900 dark:text-white">Hole Edge Margin</span>
+                      <span className="font-mono font-black text-zinc-950 dark:text-white">{tagConfig.holeEdgeMargin.toFixed(1)} mm</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => stepTag('holeEdgeMargin', tagConfig.holeEdgeMargin, -0.5, 1.5, 12.0, 1)}
+                        className="w-5 h-5 rounded border flex items-center justify-center font-bold text-xs bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-950 dark:text-white"
+                      >
+                        <Minus className="w-2.5 h-2.5" />
+                      </button>
+                      <input
+                        type="range"
+                        min={1.5}
+                        max={12.0}
+                        step={0.5}
+                        value={tagConfig.holeEdgeMargin}
+                        onChange={(e) => onUpdateTagConfig({ holeEdgeMargin: Number(e.target.value) })}
+                        className="flex-1 h-1.5 accent-zinc-950 dark:accent-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => stepTag('holeEdgeMargin', tagConfig.holeEdgeMargin, 0.5, 1.5, 12.0, 1)}
                         className="w-5 h-5 rounded border flex items-center justify-center font-bold text-xs bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-950 dark:text-white"
                       >
                         <Plus className="w-2.5 h-2.5" />

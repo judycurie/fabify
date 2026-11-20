@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { TagConfig, HolePlacement, TagStyle, AppTheme, TagDimensions } from '../types/tag';
+import { TagConfig, HolePlacement, TagStyle, AppTheme, TagDimensions, FONT_OPTIONS, FontFamily } from '../types/tag';
 import { 
   Type, 
   Box, 
@@ -137,7 +137,11 @@ export const ControlDock: React.FC<ControlDockProps> = ({
     const next = Math.max(minVal, Math.min(maxVal, currentVal + delta));
     const factor = Math.pow(10, precision);
     const rounded = Math.round(next * factor) / factor;
-    onChange({ [key]: rounded });
+    if (key === 'filletRadius') {
+      onChange({ filletRadius: rounded, autoFillet: false });
+    } else {
+      onChange({ [key]: rounded });
+    }
   };
 
   const isSheetOpen = activeTab !== null;
@@ -233,7 +237,7 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                       Primary Text (Line 1)
                     </label>
                     <span className={`text-[11px] font-mono ${isLight ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                      Helvetica
+                      {FONT_OPTIONS.find((f) => f.id === (config.fontFamily || 'helvetica'))?.label || 'Helvetica'}
                     </span>
                   </div>
                   <div className="relative flex items-center">
@@ -258,6 +262,37 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                         <X className="w-4 h-4" />
                       </button>
                     )}
+                  </div>
+                </div>
+
+                {/* Font Family Selector */}
+                <div>
+                  <label className={`block text-xs font-semibold mb-1.5 ${isLight ? 'text-zinc-700' : 'text-zinc-300'}`}>
+                    Font Family
+                  </label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {FONT_OPTIONS.map((f) => {
+                      const isSelected = (config.fontFamily || 'helvetica') === f.id;
+                      return (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => onChange({ fontFamily: f.id as FontFamily })}
+                          style={{ fontFamily: f.cssFamily }}
+                          className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all truncate ${
+                            isSelected
+                              ? isLight
+                                ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm'
+                                : 'bg-white text-zinc-950 border-white shadow-sm'
+                              : isLight
+                              ? 'bg-zinc-50 border-zinc-200 text-zinc-700 hover:bg-zinc-100'
+                              : 'bg-zinc-950 border-zinc-800 text-zinc-300 hover:bg-zinc-800'
+                          }`}
+                        >
+                          {f.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -585,11 +620,15 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                 </div>
 
                 {/* Corner Fillet Radius - Adjusted when circular */}
-                {config.shape !== 'circle' ? (
+                {config.shape !== 'circle' && config.shape !== 'rectangle' ? (
                   <div className={`p-3.5 rounded-2xl border ${isLight ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-950 border-zinc-800'}`}>
                     <div className="flex justify-between items-center text-xs mb-2">
                       <span className="font-bold">Fillet Corner Radius</span>
-                      <span className="font-mono font-bold text-sm">{config.filletRadius.toFixed(1)} mm</span>
+                      <span className="font-mono font-bold text-sm">
+                        {config.autoFillet !== false
+                          ? `${(dimensions?.appliedFilletRadius ?? config.filletRadius).toFixed(1)} mm (½ Width)`
+                          : `${config.filletRadius.toFixed(1)} mm`}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 mb-2.5">
                       <button
@@ -605,8 +644,8 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                         min="0.5"
                         max={maxFillet}
                         step={maxFillet > 20 ? 1.0 : 0.5}
-                        value={Math.min(config.filletRadius, maxFillet)}
-                        onChange={(e) => onChange({ filletRadius: parseFloat(e.target.value) })}
+                        value={Math.min(config.autoFillet !== false ? (dimensions?.appliedFilletRadius ?? config.filletRadius) : config.filletRadius, maxFillet)}
+                        onChange={(e) => onChange({ filletRadius: parseFloat(e.target.value), autoFillet: false })}
                         className={`w-full cursor-pointer ${isLight ? 'accent-zinc-900' : 'accent-white'}`}
                       />
                       <button
@@ -618,17 +657,28 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => onChange({ autoFillet: true })}
+                        className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
+                          config.autoFillet !== false
+                            ? isLight ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-950 border-white'
+                            : isLight ? 'bg-white text-zinc-700 border-zinc-300' : 'bg-zinc-900 text-zinc-300 border-zinc-700'
+                        }`}
+                      >
+                        ½ Width Pill (Default)
+                      </button>
                       {[
                         { rad: 1.0, label: 'Subtle 1mm' },
                         { rad: 3.5, label: 'Smooth 3.5mm' },
-                        { rad: maxFillet, label: 'Full Pill Shape' },
                       ].map((p) => (
                         <button
                           key={p.label}
-                          onClick={() => onChange({ filletRadius: p.rad })}
+                          type="button"
+                          onClick={() => onChange({ filletRadius: p.rad, autoFillet: false })}
                           className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
-                            Math.abs(config.filletRadius - p.rad) < 0.2
+                            config.autoFillet === false && Math.abs(config.filletRadius - p.rad) < 0.2
                               ? isLight ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-950 border-white'
                               : isLight ? 'bg-white text-zinc-700 border-zinc-300' : 'bg-zinc-900 text-zinc-300 border-zinc-700'
                           }`}
@@ -638,7 +688,7 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                       ))}
                     </div>
                   </div>
-                ) : (
+                ) : config.shape === 'circle' ? (
                   <div className={`p-3 rounded-2xl border flex items-center justify-between text-xs ${
                     isLight ? 'bg-zinc-50 border-zinc-200 text-zinc-600' : 'bg-zinc-950 border-zinc-800 text-zinc-400'
                   }`}>
@@ -648,7 +698,7 @@ export const ControlDock: React.FC<ControlDockProps> = ({
                     </div>
                     <span className="text-[11px] font-mono text-zinc-500">Continuous Arc</span>
                   </div>
-                )}
+                ) : null}
 
                 {/* Padding / Margin & Bevel */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

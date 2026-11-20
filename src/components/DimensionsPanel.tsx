@@ -165,7 +165,10 @@ export const DimensionsPanel: React.FC<DimensionsPanelProps> = ({
               )}
               <div className={`flex justify-between ${isLight ? 'text-zinc-600' : 'text-zinc-400'}`}>
                 <span>Fillet Corner Radius:</span>
-                <span className="font-mono font-semibold">{config.filletRadius} mm</span>
+                <span className="font-mono font-semibold">
+                  {dimensions.appliedFilletRadius ?? config.filletRadius} mm
+                  {config.shape !== 'circle' && config.shape !== 'rectangle' && config.autoFillet !== false ? ' (½ Width)' : ''}
+                </span>
               </div>
               <div className={`flex justify-between ${isLight ? 'text-zinc-600' : 'text-zinc-400'}`}>
                 <span>Letter Outline Fillet:</span>

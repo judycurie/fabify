@@ -25,8 +25,8 @@
       "p22": 0
     },
     "materials": {
-      "base": "matte_carbon",
-      "text": "pure_white"
+      "base_plate": "matte_carbon",
+      "text_inlay": "pure_white"
     }
   },
   "Pen & Note Caddy": {
@@ -55,8 +55,8 @@
       "p22": 0
     },
     "materials": {
-      "base": "dark_slate",
-      "text": "pure_white"
+      "base_plate": "dark_slate",
+      "text_inlay": "pure_white"
     }
   },
   "Parts Bin": {
@@ -85,8 +85,8 @@
       "p22": 0
     },
     "materials": {
-      "base": "jet_black",
-      "text": "pure_white"
+      "base_plate": "jet_black",
+      "text_inlay": "pure_white"
     }
   },
   "Stackable Bin": {
@@ -115,8 +115,8 @@
       "p22": 0
     },
     "materials": {
-      "base": "matte_carbon",
-      "text": "pure_white"
+      "base_plate": "matte_carbon",
+      "text_inlay": "pure_white"
     }
   }
 }

@@ -19,7 +19,7 @@ import { CartItem, OrderRecord, LicenseType, ActiveTemplateInfo } from './types/
 import { DEFAULT_TAG_CONFIG, TAG_PRESETS } from './utils/presets';
 import { DEFAULT_BOX_CONFIG, BOX_PRESETS } from './utils/boxPresets';
 import { generateTagParamCode, generateBoxParamCode } from './utils/paramCode';
-import { loadHelveticaFont } from './utils/fontLoader';
+import { loadFont } from './utils/fontLoader';
 import { generateTagModel, GeneratedTagModel } from './utils/tagGeometry';
 import { generateBoxModel } from './utils/boxGeometry';
 import { exportSTL, exportMultiPartSTL, getSafeFilename, fireExportConfetti } from './utils/stlExporter';
@@ -138,12 +138,15 @@ export default function App() {
     }
   }, []);
 
-  // Load font
+  // Load selected font family & weight
+  const activeFontFamily = tagConfig.fontFamily || 'helvetica';
+  const activeFontVariant = tagConfig.fontVariant || 'bold';
+
   useEffect(() => {
     let isMounted = true;
     setIsFontLoading(true);
 
-    loadHelveticaFont('bold')
+    loadFont(activeFontFamily, activeFontVariant)
       .then((loadedFont) => {
         if (isMounted) {
           setFont(loadedFont);
@@ -151,7 +154,7 @@ export default function App() {
         }
       })
       .catch((err) => {
-        console.error('Failed to load Helvetica font:', err);
+        console.error('Failed to load font:', err);
         if (isMounted) {
           setIsFontLoading(false);
         }
@@ -160,7 +163,7 @@ export default function App() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [activeFontFamily, activeFontVariant]);
 
   // Generate Tag Model
   const updateTagGeometry = useCallback(
@@ -512,8 +515,9 @@ export default function App() {
     }
     handleUpdateTagConfig(preset.config);
     try {
-      const activeFont = font || await loadHelveticaFont('bold');
-      const tempModel = await generateTagModel({ ...DEFAULT_TAG_CONFIG, ...preset.config }, activeFont);
+      const mergedConfig = { ...DEFAULT_TAG_CONFIG, ...preset.config };
+      const activeFont = await loadFont(mergedConfig.fontFamily || 'helvetica', mergedConfig.fontVariant || 'bold');
+      const tempModel = await generateTagModel(mergedConfig, activeFont);
       exportSTL(tempModel.exportGeometry, {
         filename: `Free_${preset.name.replace(/\s+/g, '_')}.stl`,
         binary: true,

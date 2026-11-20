@@ -4,11 +4,28 @@
 
 import * as THREE from 'three';
 import * as opentype from 'opentype.js';
-import { FontVariant } from '../types/tag';
+import { FontFamily, FontVariant } from '../types/tag';
 
 // In-memory cache for parsed opentype fonts
-const fontCache = new Map<FontVariant, opentype.Font>();
-const fontPromises = new Map<FontVariant, Promise<opentype.Font>>();
+const fontCache = new Map<string, opentype.Font>();
+const fontPromises = new Map<string, Promise<opentype.Font>>();
+
+const FONT_FILE_MAP: Record<FontFamily, { bold: string; regular: string }> = {
+  helvetica: { bold: 'Helvetica-Bold.ttf', regular: 'Helvetica-Regular.ttf' },
+  lato: { bold: 'Lato-Bold.ttf', regular: 'Lato-Regular.ttf' },
+  arial: { bold: 'Arial-Bold.woff', regular: 'Arial-Regular.woff' },
+  ibm_plex: { bold: 'IBMPlexSans-Bold.ttf', regular: 'IBMPlexSans-Regular.ttf' },
+  consolas: { bold: 'Consolas-Bold.ttf', regular: 'Consolas-Regular.ttf' },
+};
+
+export function normalizeFontFamily(family?: string | null): FontFamily {
+  const f = (family || 'helvetica').toLowerCase().trim().replace(/[\s-]+/g, '_');
+  if (f === 'lato') return 'lato';
+  if (f === 'arial') return 'arial';
+  if (f === 'ibm_plex' || f === 'imb_plex' || f === 'ibm_plex_sans' || f === 'ibmplex') return 'ibm_plex';
+  if (f === 'consolas' || f === 'consola' || f === 'inconsolata') return 'consolas';
+  return 'helvetica';
+}
 
 export interface HoleIslandInfo {
   cx: number;
@@ -22,31 +39,45 @@ export interface HoleIslandInfo {
 }
 
 /**
- * Load and parse Helvetica font
+ * Load and parse any supported OpenType/WOFF font family & weight
  */
-export async function loadHelveticaFont(variant: FontVariant = 'regular'): Promise<opentype.Font> {
-  if (fontCache.has(variant)) {
-    return fontCache.get(variant)!;
+export async function loadFont(
+  family: FontFamily | string = 'helvetica',
+  variant: FontVariant = 'bold'
+): Promise<opentype.Font> {
+  const normalizedFamily = normalizeFontFamily(family);
+  const normalizedVariant: FontVariant = variant === 'regular' ? 'regular' : 'bold';
+  const cacheKey = `${normalizedFamily}:${normalizedVariant}`;
+
+  if (fontCache.has(cacheKey)) {
+    return fontCache.get(cacheKey)!;
   }
 
-  if (fontPromises.has(variant)) {
-    return fontPromises.get(variant)!;
+  if (fontPromises.has(cacheKey)) {
+    return fontPromises.get(cacheKey)!;
   }
 
   const promise = (async () => {
-    const filename = variant === 'bold' ? 'Helvetica-Bold.ttf' : 'Helvetica-Regular.ttf';
+    const filename = FONT_FILE_MAP[normalizedFamily][normalizedVariant];
     const response = await fetch(`/fonts/${filename}`);
     if (!response.ok) {
       throw new Error(`Failed to load font /fonts/${filename}: ${response.statusText}`);
     }
     const buffer = await response.arrayBuffer();
     const font = opentype.parse(buffer);
-    fontCache.set(variant, font);
+    fontCache.set(cacheKey, font);
     return font;
   })();
 
-  fontPromises.set(variant, promise);
+  fontPromises.set(cacheKey, promise);
   return promise;
+}
+
+/**
+ * Load and parse Helvetica font (backward-compatible helper)
+ */
+export async function loadHelveticaFont(variant: FontVariant = 'regular'): Promise<opentype.Font> {
+  return loadFont('helvetica', variant);
 }
 
 /**

@@ -50,52 +50,65 @@ export function buildTagBase2DShape(
   shape: THREE.Shape;
   holes: HoleInfo[];
   bounds: { minX: number; maxX: number; minY: number; maxY: number; width: number; height: number };
+  appliedFilletRadius: number;
 } {
   const pad = Math.max(0.5, config.padding);
   const holeR = Math.max(1.0, config.holeDiameter / 2);
   const holeMargin = Math.max(1.5, config.holeEdgeMargin);
-  const holeSpacing = Math.max(6.0, config.holeSymmetricalSpacing);
+  const holeClearR = holeR + holeMargin;
+  const holeSpacing = Math.max(6.0, config.holeDiameter + 2.0, config.holeSymmetricalSpacing);
 
   // ---------------------------------------------------------
   // 1. CIRCULAR / ROUND TAG GEOMETRY (e.g. Pet ID tags, medals, coins)
   // ---------------------------------------------------------
   if (config.shape === 'circle') {
-    // Bounding radius containing the text rectangle centered at (0, 0)
     const textDiagRadius = Math.sqrt((textW / 2) * (textW / 2) + (textH / 2) * (textH / 2));
     let baseRadius = textDiagRadius + pad;
 
     const holes: HoleInfo[] = [];
 
     if (config.holePlacement === 'top') {
-      // Top hole placed near the upper rim of the circular disc
-      // Need baseRadius - 2*(holeMargin + holeR) >= textH / 2 so hole does not encroach text
-      const requiredHoleClearanceRadius = textH / 2 + 2 * (holeMargin + holeR) + 0.5;
-      baseRadius = Math.max(baseRadius, requiredHoleClearanceRadius);
-
-      const holeCenterY = baseRadius - holeMargin - holeR;
       if (config.holeCount === 1) {
+        const requiredHoleClearanceRadius = textH / 2 + pad + 2 * holeClearR;
+        baseRadius = Math.max(baseRadius, requiredHoleClearanceRadius);
+        const holeCenterY = baseRadius - holeClearR;
         holes.push({ x: 0, y: holeCenterY, diameter: config.holeDiameter });
       } else {
-        const halfSpace = Math.min(holeSpacing / 2, baseRadius * 0.5);
-        holes.push({ x: -halfSpace, y: holeCenterY, diameter: config.holeDiameter });
-        holes.push({ x: halfSpace, y: holeCenterY, diameter: config.holeDiameter });
+        const halfSpace = holeSpacing / 2;
+        const minHoleY = textH / 2 + pad + holeClearR;
+        const requiredDualRadius = Math.hypot(halfSpace, minHoleY) + holeClearR;
+        baseRadius = Math.max(baseRadius, requiredDualRadius);
+        const rimR = baseRadius - holeClearR;
+        const clampedHalf = Math.min(halfSpace, Math.sqrt(Math.max(0, rimR * rimR - minHoleY * minHoleY)));
+        const holeCenterY = Math.sqrt(Math.max(0, rimR * rimR - clampedHalf * clampedHalf));
+        holes.push({ x: -clampedHalf, y: holeCenterY, diameter: config.holeDiameter });
+        holes.push({ x: clampedHalf, y: holeCenterY, diameter: config.holeDiameter });
       }
-    } else if (config.holePlacement === 'left') {
-      const requiredHoleClearanceRadius = textW / 2 + 2 * (holeMargin + holeR) + 0.5;
-      baseRadius = Math.max(baseRadius, requiredHoleClearanceRadius);
-      const holeCenterX = -baseRadius + holeMargin + holeR;
-      holes.push({ x: holeCenterX, y: 0, diameter: config.holeDiameter });
-    } else if (config.holePlacement === 'right') {
-      const requiredHoleClearanceRadius = textW / 2 + 2 * (holeMargin + holeR) + 0.5;
-      baseRadius = Math.max(baseRadius, requiredHoleClearanceRadius);
-      const holeCenterX = baseRadius - holeMargin - holeR;
-      holes.push({ x: holeCenterX, y: 0, diameter: config.holeDiameter });
-    } else if (config.holePlacement === 'both-ends') {
-      const requiredHoleClearanceRadius = textW / 2 + 2 * (holeMargin + holeR) + 0.5;
-      baseRadius = Math.max(baseRadius, requiredHoleClearanceRadius);
-      const holeDist = baseRadius - holeMargin - holeR;
-      holes.push({ x: -holeDist, y: 0, diameter: config.holeDiameter });
-      holes.push({ x: holeDist, y: 0, diameter: config.holeDiameter });
+    } else if (config.holePlacement === 'left' || config.holePlacement === 'right' || config.holePlacement === 'both-ends') {
+      if (config.holeCount === 2 && config.holePlacement !== 'both-ends') {
+        const halfSpace = holeSpacing / 2;
+        const minHoleX = textW / 2 + pad + holeClearR;
+        const requiredDualRadius = Math.hypot(minHoleX, halfSpace) + holeClearR;
+        baseRadius = Math.max(baseRadius, requiredDualRadius);
+        const rimR = baseRadius - holeClearR;
+        const clampedHalf = Math.min(halfSpace, Math.sqrt(Math.max(0, rimR * rimR - minHoleX * minHoleX)));
+        const absHoleX = Math.sqrt(Math.max(0, rimR * rimR - clampedHalf * clampedHalf));
+        const sign = config.holePlacement === 'left' ? -1 : 1;
+        holes.push({ x: sign * absHoleX, y: -clampedHalf, diameter: config.holeDiameter });
+        holes.push({ x: sign * absHoleX, y: clampedHalf, diameter: config.holeDiameter });
+      } else {
+        const requiredHoleClearanceRadius = textW / 2 + pad + 2 * holeClearR;
+        baseRadius = Math.max(baseRadius, requiredHoleClearanceRadius);
+        const holeDist = baseRadius - holeClearR;
+        if (config.holePlacement === 'left') {
+          holes.push({ x: -holeDist, y: 0, diameter: config.holeDiameter });
+        } else if (config.holePlacement === 'right') {
+          holes.push({ x: holeDist, y: 0, diameter: config.holeDiameter });
+        } else {
+          holes.push({ x: -holeDist, y: 0, diameter: config.holeDiameter });
+          holes.push({ x: holeDist, y: 0, diameter: config.holeDiameter });
+        }
+      }
     }
 
     const minX = -baseRadius;
@@ -119,13 +132,14 @@ export function buildTagBase2DShape(
       shape,
       holes,
       bounds: { minX, maxX, minY, maxY, width, height },
+      appliedFilletRadius: Math.round(baseRadius * 10) / 10,
     };
   }
 
   // ---------------------------------------------------------
-  // 2. RECTANGULAR & ROUNDED RECTANGLE TAG GEOMETRY
+  // 2. RECTANGULAR & FILLETED RECTANGLE TAG GEOMETRY
   // ---------------------------------------------------------
-  // Minimal text envelope centered around (0, 0)
+  // Step A: Axis-aligned containment for text + padding
   let minX = -textW / 2 - pad;
   let maxX = textW / 2 + pad;
   let minY = -textH / 2 - pad;
@@ -134,76 +148,138 @@ export function buildTagBase2DShape(
   const holes: HoleInfo[] = [];
 
   if (config.holePlacement === 'top') {
-    // Hole is positioned above text, strictly guaranteeing holeMargin clearance between hole and text!
-    const holeCenterY = textH / 2 + pad + holeMargin + holeR;
-    maxY = holeCenterY + holeR + holeMargin;
+    const holeCenterY = textH / 2 + pad + holeClearR;
+    maxY = Math.max(maxY, holeCenterY + holeClearR);
 
     if (config.holeCount === 1) {
       holes.push({ x: 0, y: holeCenterY, diameter: config.holeDiameter });
+      minX = Math.min(minX, -holeClearR);
+      maxX = Math.max(maxX, holeClearR);
     } else {
       const halfSpace = holeSpacing / 2;
       holes.push({ x: -halfSpace, y: holeCenterY, diameter: config.holeDiameter });
       holes.push({ x: halfSpace, y: holeCenterY, diameter: config.holeDiameter });
-
-      minX = Math.min(minX, -halfSpace - holeR - holeMargin);
-      maxX = Math.max(maxX, halfSpace + holeR + holeMargin);
+      minX = Math.min(minX, -halfSpace - holeClearR);
+      maxX = Math.max(maxX, halfSpace + holeClearR);
     }
 
     if (config.centerTextInBase) {
-      // Balance bottom edge symmetrically so text remains in center without losing hole clearance
-      minY = -maxY;
+      minY = Math.min(minY, -maxY);
     }
   } else if (config.holePlacement === 'left') {
-    // Hole is positioned to the left of text, strictly guaranteeing holeMargin clearance between hole and text!
-    const holeCenterX = -textW / 2 - pad - holeMargin - holeR;
-    minX = holeCenterX - (holeR + holeMargin);
+    const holeCenterX = -textW / 2 - pad - holeClearR;
+    minX = Math.min(minX, holeCenterX - holeClearR);
 
     if (config.holeCount === 1) {
       holes.push({ x: holeCenterX, y: 0, diameter: config.holeDiameter });
+      minY = Math.min(minY, -holeClearR);
+      maxY = Math.max(maxY, holeClearR);
     } else {
       const halfSpace = holeSpacing / 2;
       holes.push({ x: holeCenterX, y: -halfSpace, diameter: config.holeDiameter });
       holes.push({ x: holeCenterX, y: halfSpace, diameter: config.holeDiameter });
-
-      minY = Math.min(minY, -halfSpace - holeR - holeMargin);
-      maxY = Math.max(maxY, halfSpace + holeR + holeMargin);
+      minY = Math.min(minY, -halfSpace - holeClearR);
+      maxY = Math.max(maxY, halfSpace + holeClearR);
     }
 
     if (config.centerTextInBase) {
-      // Balance right edge symmetrically so text remains in center without losing hole clearance
-      maxX = -minX;
+      maxX = Math.max(maxX, -minX);
     }
   } else if (config.holePlacement === 'right') {
-    // Hole is positioned to the right of text, strictly guaranteeing holeMargin clearance
-    const holeCenterX = textW / 2 + pad + holeMargin + holeR;
-    maxX = holeCenterX + holeR + holeMargin;
+    const holeCenterX = textW / 2 + pad + holeClearR;
+    maxX = Math.max(maxX, holeCenterX + holeClearR);
 
     if (config.holeCount === 1) {
       holes.push({ x: holeCenterX, y: 0, diameter: config.holeDiameter });
+      minY = Math.min(minY, -holeClearR);
+      maxY = Math.max(maxY, holeClearR);
     } else {
       const halfSpace = holeSpacing / 2;
       holes.push({ x: holeCenterX, y: -halfSpace, diameter: config.holeDiameter });
       holes.push({ x: holeCenterX, y: halfSpace, diameter: config.holeDiameter });
-
-      minY = Math.min(minY, -halfSpace - holeR - holeMargin);
-      maxY = Math.max(maxY, halfSpace + holeR + holeMargin);
+      minY = Math.min(minY, -halfSpace - holeClearR);
+      maxY = Math.max(maxY, halfSpace + holeClearR);
     }
 
     if (config.centerTextInBase) {
-      minX = -maxX;
+      minX = Math.min(minX, -maxX);
     }
   } else if (config.holePlacement === 'both-ends') {
-    const leftHoleX = -textW / 2 - pad - holeMargin - holeR;
-    minX = leftHoleX - (holeR + holeMargin);
+    const leftHoleX = -textW / 2 - pad - holeClearR;
+    const rightHoleX = textW / 2 + pad + holeClearR;
+    minX = Math.min(minX, leftHoleX - holeClearR);
+    maxX = Math.max(maxX, rightHoleX + holeClearR);
+    minY = Math.min(minY, -holeClearR);
+    maxY = Math.max(maxY, holeClearR);
     holes.push({ x: leftHoleX, y: 0, diameter: config.holeDiameter });
-
-    const rightHoleX = textW / 2 + pad + holeMargin + holeR;
-    maxX = rightHoleX + holeR + holeMargin;
     holes.push({ x: rightHoleX, y: 0, diameter: config.holeDiameter });
   }
 
-  let width = maxX - minX;
   let height = maxY - minY;
+  const isRectangle = config.shape === 'rectangle';
+  const useHalfWidthFillet = !isRectangle && config.autoFillet !== false;
+
+  // Step B: Corner-arc containment for BOTH text + pad AND holes + holeEdgeMargin
+  const rPreview = isRectangle
+    ? 0.2
+    : useHalfWidthFillet
+      ? height / 2
+      : Math.min(Math.max(0.2, config.filletRadius), height / 2);
+
+  // Ensure text corners (±textW/2, ±textH/2) maintain >= pad clearance from corner arcs
+  if (rPreview > pad) {
+    const dyText = Math.max(0, textH / 2 - (maxY - rPreview), (minY + rPreview) - (-textH / 2));
+    if (dyText > 0) {
+      const dxAllowed = Math.sqrt(Math.max(0, (rPreview - pad) * (rPreview - pad) - dyText * dyText));
+      const neededXPad = Math.max(pad, rPreview - dxAllowed);
+      minX = Math.min(minX, -textW / 2 - neededXPad);
+      maxX = Math.max(maxX, textW / 2 + neededXPad);
+    }
+  }
+
+  // Ensure every hole maintains >= holeClearR from corner arcs
+  let leftHoleEdgeInset = holeClearR;
+  let rightHoleEdgeInset = holeClearR;
+  for (const h of holes) {
+    let neededEdgeX = holeClearR;
+    if (rPreview > holeClearR) {
+      const dyHole = Math.max(0, h.y - (maxY - rPreview), (minY + rPreview) - h.y);
+      if (dyHole > 0) {
+        const dxAllowed = Math.sqrt(Math.max(0, (rPreview - holeClearR) * (rPreview - holeClearR) - dyHole * dyHole));
+        neededEdgeX = Math.max(holeClearR, rPreview - dxAllowed);
+      }
+    }
+    if (h.x < 0) {
+      minX = Math.min(minX, h.x - neededEdgeX);
+      leftHoleEdgeInset = Math.max(leftHoleEdgeInset, neededEdgeX);
+    } else if (h.x > 0) {
+      maxX = Math.max(maxX, h.x + neededEdgeX);
+      rightHoleEdgeInset = Math.max(rightHoleEdgeInset, neededEdgeX);
+    } else {
+      minX = Math.min(minX, -neededEdgeX);
+      maxX = Math.max(maxX, neededEdgeX);
+    }
+  }
+
+  // Keep text centered horizontally when left/right single-side hole is used and centerTextInBase is enabled
+  if (config.centerTextInBase) {
+    if (config.holePlacement === 'left') {
+      maxX = Math.max(maxX, -minX);
+    } else if (config.holePlacement === 'right') {
+      minX = Math.min(minX, -maxX);
+    }
+  }
+
+  // When default half-width pill fillet is active, ensure X length >= Y width so r = height / 2 fits cleanly
+  if (useHalfWidthFillet && maxX - minX < height) {
+    const extraX = (height - (maxX - minX)) / 2;
+    minX -= extraX;
+    maxX += extraX;
+  }
+
+  // Exact minimum required width preserving all margins, text, holes, and corner fillets
+  const requiredWidth = maxX - minX;
+  let width = requiredWidth;
 
   // Enforce minimum base length (e.g. 100mm for door sign plate, 25mm for key tag)
   if (config.minBaseLength && width < config.minBaseLength) {
@@ -212,38 +288,59 @@ export function buildTagBase2DShape(
     maxX += expand;
     width = maxX - minX;
 
-    // Reposition holes to sit cleanly at the ends of the plate
+    // Reposition edge-anchored holes cleanly near the expanded ends (handling 1 or 2 holes)
     if (config.holePlacement === 'both-ends' && holes.length >= 2) {
-      holes[0].x = minX + holeMargin + holeR;
-      holes[1].x = maxX - (holeMargin + holeR);
+      holes[0].x = minX + leftHoleEdgeInset;
+      holes[1].x = maxX - rightHoleEdgeInset;
     } else if (config.holePlacement === 'left' && holes.length >= 1) {
-      holes[0].x = minX + holeMargin + holeR;
+      for (const h of holes) {
+        h.x = minX + leftHoleEdgeInset;
+      }
     } else if (config.holePlacement === 'right' && holes.length >= 1) {
-      holes[0].x = maxX - (holeMargin + holeR);
+      for (const h of holes) {
+        h.x = maxX - rightHoleEdgeInset;
+      }
     }
   }
 
-  // Enforce maximum base length (e.g. 75-80mm for key tag)
+  // Soft maximum base length: NEVER shrink below requiredWidth (never clips text, holes, or margins)
   if (config.maxBaseLength && width > config.maxBaseLength) {
-    const contract = (width - config.maxBaseLength) / 2;
-    minX += contract;
-    maxX -= contract;
-    width = maxX - minX;
+    const clampedTargetWidth = Math.max(config.maxBaseLength, requiredWidth);
+    if (width > clampedTargetWidth) {
+      const contract = (width - clampedTargetWidth) / 2;
+      minX += contract;
+      maxX -= contract;
+      width = maxX - minX;
+    }
   }
 
-  // Fillet radius, clamped to max possible radius
-  const maxR = Math.max(0.5, Math.min(width, height) / 2 - 0.05);
-  const r = config.shape === 'rectangle' 
-    ? 0.2 
-    : Math.min(Math.max(0.2, config.filletRadius), maxR);
+  height = maxY - minY;
+  const maxAllowedR = Math.max(0.2, Math.min(width, height) / 2);
+  const r = isRectangle
+    ? 0.2
+    : useHalfWidthFillet
+      ? maxAllowedR
+      : Math.min(Math.max(0.2, config.filletRadius), maxAllowedR);
 
-  // Construct 2D shape with 4 rounded fillet corners
+  // Construct 2D shape: use exact 2-semicircle stadium outline when r == half of width
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
   const shape = new THREE.Shape();
-  shape.absarc(maxX - r, maxY - r, r, 0, Math.PI / 2, false);
-  shape.absarc(minX + r, maxY - r, r, Math.PI / 2, Math.PI, false);
-  shape.absarc(minX + r, minY + r, r, Math.PI, Math.PI * 1.5, false);
-  shape.absarc(maxX - r, minY + r, r, Math.PI * 1.5, Math.PI * 2, false);
-  shape.closePath();
+  if (!isRectangle && Math.abs(r - height / 2) < 0.01 && width >= height - 0.01) {
+    shape.absarc(maxX - r, centerY, r, -Math.PI / 2, Math.PI / 2, false);
+    shape.absarc(minX + r, centerY, r, Math.PI / 2, Math.PI * 1.5, false);
+    shape.closePath();
+  } else if (!isRectangle && Math.abs(r - width / 2) < 0.01 && height > width) {
+    shape.absarc(centerX, maxY - r, r, 0, Math.PI, false);
+    shape.absarc(centerX, minY + r, r, Math.PI, Math.PI * 2, false);
+    shape.closePath();
+  } else {
+    shape.absarc(maxX - r, maxY - r, r, 0, Math.PI / 2, false);
+    shape.absarc(minX + r, maxY - r, r, Math.PI / 2, Math.PI, false);
+    shape.absarc(minX + r, minY + r, r, Math.PI, Math.PI * 1.5, false);
+    shape.absarc(maxX - r, minY + r, r, Math.PI * 1.5, Math.PI * 2, false);
+    shape.closePath();
+  }
 
   // Add circular cutout holes
   for (const h of holes) {
@@ -256,6 +353,7 @@ export function buildTagBase2DShape(
     shape,
     holes,
     bounds: { minX, maxX, minY, maxY, width, height },
+    appliedFilletRadius: Math.round(r * 10) / 10,
   };
 }
 
@@ -507,6 +605,7 @@ export async function generateTagModel(
     totalLength: Math.round(baseBounds.width * 10) / 10,
     totalWidth: Math.round(baseBounds.height * 10) / 10,
     totalHeight: Math.round(totalHeight * 10) / 10,
+    appliedFilletRadius: baseResult.appliedFilletRadius,
     baseThickness: Math.round(baseThickness * 10) / 10,
     textRelief: Math.round(rawRelief * 10) / 10,
     textWidth: Math.round(textW * 10) / 10,

@@ -6,7 +6,16 @@ export type HolePlacement = 'none' | 'top' | 'left' | 'right' | 'both-ends';
 export type TagStyle = 'embossed' | 'debossed' | 'cutout';
 export type TagShape = 'rounded' | 'circle' | 'rectangle';
 export type FontVariant = 'regular' | 'bold';
+export type FontFamily = 'helvetica' | 'lato' | 'arial' | 'ibm_plex' | 'consolas';
 export type AppTheme = 'light' | 'dark';
+
+export const FONT_OPTIONS: { id: FontFamily; label: string; cssFamily: string }[] = [
+  { id: 'helvetica', label: 'Helvetica', cssFamily: 'Helvetica, Arial, sans-serif' },
+  { id: 'lato', label: 'Lato', cssFamily: 'Lato, sans-serif' },
+  { id: 'arial', label: 'Arial', cssFamily: 'Arial, sans-serif' },
+  { id: 'ibm_plex', label: 'IBM Plex', cssFamily: '"IBM Plex Sans", sans-serif' },
+  { id: 'consolas', label: 'Consolas', cssFamily: 'Consolas, Inconsolata, monospace' },
+];
 
 export interface TagConfig {
   // Shape Profile
@@ -15,7 +24,8 @@ export interface TagConfig {
   // Typography - Line 1
   text: string;
   fontSize: number;          // 3 mm to 100 mm (from small key tags to large signs)
-  fontVariant: FontVariant;  // Helvetica Regular or Bold
+  fontFamily?: FontFamily;   // Helvetica (default), Lato, Arial, IBM Plex, Consolas
+  fontVariant: FontVariant;  // Regular or Bold
   letterSpacing: number;     // 0 to 10 mm
   letterFillet: number;      // 0 to max half of letter thickness (reliefHeight / 2)
   isUppercase: boolean;
@@ -29,10 +39,11 @@ export interface TagConfig {
   // Base Geometry & Fillets
   baseThickness: number;     // 0.4 mm to 25.0 mm (scaled with font size)
   padding: number;           // minimal bounding box margin around text (1 to 60 mm)
+  autoFillet?: boolean;      // when true (default), fillet radius = half of tag width (pill shape)
   filletRadius: number;      // fillet edges radius (0.5 to 60 mm)
   edgeBevel: number;         // 0 to 5.0 mm top-edge tactile bevel
   minBaseLength?: number;    // minimum total X dimension in mm (e.g. 100 mm for door sign plate, 25 mm for key tag)
-  maxBaseLength?: number;    // maximum total X dimension in mm (e.g. 80 mm for key tag)
+  maxBaseLength?: number;    // maximum total X dimension in mm (only soft target; never clips text/holes/margins)
 
   // Holes
   holePlacement: HolePlacement; // 'top' | 'left' | 'right' | 'both-ends' | 'none'
@@ -60,6 +71,7 @@ export interface TagDimensions {
   totalLength: number;       // X dimension in mm
   totalWidth: number;        // Y dimension in mm
   totalHeight: number;       // Z dimension in mm
+  appliedFilletRadius?: number; // actual corner fillet radius applied in mm
   baseThickness: number;     // Z base in mm
   textRelief: number;        // Z text in mm
   textWidth: number;         // text bounding X in mm
